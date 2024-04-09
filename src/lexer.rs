@@ -83,8 +83,7 @@ impl Position {
     }
 }
 
-
-pub fn tokenize(text: String) -> Vec<Token> {
+pub fn tokenize(text: &str) -> Vec<Token> {
     let mut tokens: Vec<Token> = Vec::new();
     let lines = text.lines();
     let mut curr_line = 1;
