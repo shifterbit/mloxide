@@ -12,3 +12,8 @@ target/
 # Nix Stuff
 result
 .direnv
+
+
+# Added by cargo
+
+/target
