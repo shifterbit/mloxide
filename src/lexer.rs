@@ -1,4 +1,5 @@
 use std::fmt;
+use std::fmt::Display;
 
 #[derive(Debug)]
 pub struct Token {
@@ -6,6 +7,13 @@ pub struct Token {
     literal: String,
     position: Position,
 }
+
+impl Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "\"{}\" {} {}", self.literal, self.token_type, self.position)
+    }
+}
+
 
 impl Token {
     pub fn new(literal: String, token_type: TokenType, position: Position) -> Token {
@@ -18,7 +26,7 @@ impl Token {
 }
 
 #[derive(Debug)]
-enum TokenType {
+pub enum TokenType {
     // Single Character Token
     LeftParen,
     RightParen,
@@ -30,20 +38,33 @@ enum TokenType {
     Float(f64),
 }
 
+impl Display for TokenType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::LeftParen => write!(f, "LeftParen"),
+            Self::RightParen => write!(f, "RightParen"),
+            Self::Plus => write!(f, "Plus"),
+            Self::Minus => write!(f, "Minus"),
+            Self::Star => write!(f, "Star"),
+            Self::ForwardSlash => write!(f, "ForwardSlash"),
+            Self::Float(n) => write!(f, "Float({})", n),
+        }
+    }
+}
+
 #[derive(Debug)]
-struct Position {
+pub struct Position {
     start_line: u32,
     end_line: u32,
     start_column: u32,
     end_column: u32,
 }
 
-impl fmt::Display for Position {
+impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}:{}", self.start_line, self.start_column)
     }
 }
-
 
 impl Position {
     pub fn new(start_line: u32, end_line: u32, start_column: u32, end_column: u32) -> Position {
@@ -106,8 +127,10 @@ pub fn tokenize(text: String) -> Vec<Token> {
                     tokens.push(token);
                     chars.next();
                     column += 1;
-                },
-                _c => { chars.next(); },
+                }
+                _c => {
+                    chars.next();
+                }
             }
 
             curr_line += 1;
