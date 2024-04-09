@@ -4,5 +4,6 @@ pkgs.mkShellNoCC {
     rustc
     cargo
     rustfmt
+    clippy
   ];
 }
