@@ -1,7 +1,9 @@
+use std::collections::{hash_map, hash_set};
 use std::fmt;
 use std::fmt::Display;
+use std::iter::Peekable;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Token {
     token_type: TokenType,
     literal: String,
@@ -28,7 +30,7 @@ impl Token {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum TokenType {
     // Single Character Token
     LeftParen,
@@ -39,6 +41,7 @@ pub enum TokenType {
     ForwardSlash,
     // Values
     Float(f64),
+    Int(i64),
 }
 
 impl Display for TokenType {
@@ -51,11 +54,12 @@ impl Display for TokenType {
             Self::Star => write!(f, "Star"),
             Self::ForwardSlash => write!(f, "ForwardSlash"),
             Self::Float(n) => write!(f, "Float({})", n),
+            Self::Int(n) => write!(f, "Int({})", n),
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Position {
     start_line: u32,
     end_line: u32,
@@ -94,56 +98,130 @@ pub struct Lexer {
 impl Lexer {
     pub fn new(text: &str) -> Lexer {
         let mut tokens: Vec<Token> = Vec::new();
-        let lines = text.lines();
-        let mut curr_line = 1;
-        for line in lines {
-            let mut column = 1;
-            let mut chars = line.chars().peekable();
-            while let Some(character) = chars.peek() {
-                match character {
-                    '(' => {
-                        let pos = Position::new_single_char(curr_line, column);
-                        let token = Token::new("(".to_string(), TokenType::LeftParen, pos);
-                        tokens.push(token);
-                        chars.next();
-                        column += 1;
-                    }
-                    ')' => {
-                        let pos = Position::new_single_char(curr_line, column);
-                        let token = Token::new(")".to_string(), TokenType::RightParen, pos);
-                        tokens.push(token);
-                        chars.next();
-                        column += 1;
-                    }
-                    '+' => {
-                        let pos = Position::new_single_char(curr_line, column);
-                        let token = Token::new("+".to_string(), TokenType::Plus, pos);
-                        tokens.push(token);
-                        chars.next();
-                        column += 1;
-                    }
-                    '-' => {
-                        let pos = Position::new_single_char(curr_line, column);
-                        let token = Token::new("-".to_string(), TokenType::Minus, pos);
-                        tokens.push(token);
-                        chars.next();
-                        column += 1;
-                    }
-                    '*' => {
-                        let pos = Position::new_single_char(curr_line, column);
-                        let token = Token::new("*".to_string(), TokenType::Star, pos);
-                        tokens.push(token);
-                        chars.next();
-                        column += 1;
-                    }
-                    _c => {
-                        chars.next();
-                    }
+        let mut line = 1;
+        let mut column = 1;
+        let mut chars = text.chars().peekable();
+        while let Some(character) = chars.peek() {
+            match character {
+                '\n' => {
+                    line += 1;
+                    column = 1;
+                    chars.next();
                 }
-
-                curr_line += 1;
+                ' ' => {
+                    column += 1;
+                    chars.next();
+                }
+                '\t' => {
+                    column += 4;
+                    chars.next();
+                }
+                '(' | ')' | '+' | '-' | '*' | '/' => {
+                    let token = match_single_character_token(*character, line, column);
+                    tokens.push(token.unwrap());
+                    column += 1;
+                    chars.next();
+                }
+                _c if is_digit(character) => {
+                    let literal = read_number(&mut chars);
+                    let length = literal.len() as u32;
+                    let token = match_number(&literal, line, column);
+                    tokens.push(token);
+                    column += length;
+                }
+                _c if is_alpha(character) => {
+                    column += 1;
+                    chars.next();
+                }
+                _ => {
+                    column += 1;
+                    chars.next();
+                }
             }
         }
-        return Lexer {tokens};
+        tokens.reverse();
+        return Lexer { tokens };
     }
+    pub fn peek(self: &Self) -> Option<&Token> {
+        return self.tokens.last();
+    }
+    pub fn next(self: &mut Self) -> Option<&Token> {
+        let _ = self.tokens.pop();
+        return self.tokens.last();
+    }
+
+    pub fn tokens(self: Self) -> Vec<Token> {
+        return self.tokens.clone();
+    }
+
+    
+}
+
+static LETTERS: [char; 52] = [
+    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's',
+    't', 'u', 'v', 'w', 'x', 'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+    'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+];
+
+static DIGITS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+fn is_alpha(character: &char) -> bool {
+    return LETTERS.contains(character);
+}
+
+fn is_digit(character: &char) -> bool {
+    return DIGITS.contains(character);
+}
+
+fn read_number<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
+    let mut num_str: String = "".to_string();
+    let mut found_decimal = false;
+    while let Some(c) = chars.peek() {
+        match c {
+            ch if is_digit(c) => {
+                num_str.push(ch.to_owned());
+                chars.next();
+            }
+            '.' if !found_decimal => {
+                num_str.push('.');
+                found_decimal = true;
+                chars.next();
+            }
+            _ => break,
+        }
+    }
+    return num_str;
+}
+
+fn match_number(num_str: &str, line: u32, column: u32) -> Token {
+    let end_column: u32 = column + num_str.len() as u32;
+    let position = Position::new_inline(line, column, end_column);
+    if num_str.contains('.') {
+        let float_val: f64 = num_str.parse().unwrap();
+        return Token::new(num_str.to_string(), TokenType::Float(float_val), position);
+    } else {
+        let int_val: i64 = num_str.parse().unwrap();
+        return Token::new(num_str.to_string(), TokenType::Int(int_val), position);
+    }
+}
+
+#[derive(Debug)]
+struct InvalidTokenError;
+fn match_single_character_token(
+    character: char,
+    line: u32,
+    column: u32,
+) -> Result<Token, InvalidTokenError> {
+    let position = Position::new_single_char(line, column);
+    let token_type = match character {
+        '(' => TokenType::LeftParen,
+        ')' => TokenType::RightParen,
+        '-' => TokenType::Minus,
+        '+' => TokenType::Plus,
+        '*' => TokenType::Star,
+        '/' => TokenType::ForwardSlash,
+        _ => return Err(InvalidTokenError),
+    };
+    let token = Token::new(character.to_string(), token_type, position);
+    return Ok(token);
 }
