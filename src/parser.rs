@@ -28,7 +28,7 @@ pub fn parse(lexer: &mut Lexer) -> AstNode {
     parse_expr(lexer, 0)
 }
 
-fn parse_expr(mut lexer: &mut Lexer, min_bp: u8) -> AstNode {
+fn parse_expr(lexer: &mut Lexer, min_bp: u8) -> AstNode {
     // Get left hand side
     let mut lhs: AstNode = match lexer.peek() {
         Token {
@@ -54,7 +54,7 @@ fn parse_expr(mut lexer: &mut Lexer, min_bp: u8) -> AstNode {
             let rhs = parse_expr(lexer, r_bp);
             AstNode::Unary { op: Operator::Negation, expr: Box::new(rhs) }
         },
-        t => panic!("Bad Token"),
+        _t => panic!("Bad Token"),
     };
 
     loop {
