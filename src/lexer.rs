@@ -1,13 +1,22 @@
-use std::collections::{hash_map, hash_set};
 use std::fmt;
 use std::fmt::Display;
 use std::iter::Peekable;
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    token_type: TokenType,
+    pub token_type: TokenType,
     literal: String,
     position: Position,
+}
+
+impl Default for Token {
+    fn default() -> Self {
+        return Token {
+            literal: "".to_string(),
+            token_type: TokenType::Eof,
+            position: Position::new(0, 0, 0, 0),
+        };
+    }
 }
 
 impl Display for Token {
@@ -39,9 +48,13 @@ pub enum TokenType {
     Minus,
     Star,
     ForwardSlash,
+    Div,
+    Modulo,
+    Negation,
     // Values
     Float(f64),
     Int(i64),
+    Eof,
 }
 
 impl Display for TokenType {
@@ -53,8 +66,12 @@ impl Display for TokenType {
             Self::Minus => write!(f, "Minus"),
             Self::Star => write!(f, "Star"),
             Self::ForwardSlash => write!(f, "ForwardSlash"),
+            Self::Negation => write!(f, "Negation"),
             Self::Float(n) => write!(f, "Float({})", n),
             Self::Int(n) => write!(f, "Int({})", n),
+            Self::Eof => write!(f, "EOF"),
+            Self::Div => write!(f, "Div"),
+            Self::Modulo => write!(f, "Modulo"),
         }
     }
 }
@@ -116,7 +133,7 @@ impl Lexer {
                     column += 4;
                     chars.next();
                 }
-                '(' | ')' | '+' | '-' | '*' | '/' => {
+                '(' | ')' | '+' | '-' | '*' | '/' | '~' => {
                     let token = match_single_character_token(*character, line, column);
                     tokens.push(token.unwrap());
                     column += 1;
@@ -142,19 +159,17 @@ impl Lexer {
         tokens.reverse();
         return Lexer { tokens };
     }
-    pub fn peek(self: &Self) -> Option<&Token> {
-        return self.tokens.last();
+    pub fn peek(self: &Self) -> Token {
+        let token = self.tokens.last().cloned().unwrap_or_default();
+        return token;
     }
-    pub fn next(self: &mut Self) -> Option<&Token> {
-        let _ = self.tokens.pop();
-        return self.tokens.last();
+    pub fn next(self: &mut Self) -> Token {
+        return self.tokens.pop().unwrap_or_default();
     }
 
     pub fn tokens(self: Self) -> Vec<Token> {
         return self.tokens.clone();
     }
-
-    
 }
 
 static LETTERS: [char; 52] = [
@@ -220,6 +235,7 @@ fn match_single_character_token(
         '+' => TokenType::Plus,
         '*' => TokenType::Star,
         '/' => TokenType::ForwardSlash,
+        '~' => TokenType::Negation,
         _ => return Err(InvalidTokenError),
     };
     let token = Token::new(character.to_string(), token_type, position);
