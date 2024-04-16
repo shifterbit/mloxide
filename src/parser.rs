@@ -1,28 +1,6 @@
 use crate::lexer::{Lexer, Token, TokenType};
+use crate::ast::{AstNode, Operator};
 
-#[derive(Debug, Clone, Copy)]
-pub enum Operator {
-    Plus,
-    Minus,
-    Negation,
-    IntDivision,
-    RealDivision,
-    Multiply,
-}
-#[derive(Debug)]
-pub enum AstNode {
-    Int(i64),
-    Float(f64),
-    Binary {
-        op: Operator,
-        lhs: Box<AstNode>,
-        rhs: Box<AstNode>,
-    },
-    Unary {
-        op: Operator,
-        expr: Box<AstNode>,
-    },
-}
 
 pub fn parse(lexer: &mut Lexer) -> AstNode {
     parse_expr(lexer, 0)
@@ -39,11 +17,11 @@ fn parse_expr(lexer: &mut Lexer, min_bp: u8) -> AstNode {
             AstNode::Int(num)
         }
         Token {
-            token_type: TokenType::Float(num),
+            token_type: TokenType::Real(num),
             ..
         } => {
             lexer.next();
-            AstNode::Float(num)
+            AstNode::Real(num)
         }
         Token {
             token_type: TokenType::Negation,

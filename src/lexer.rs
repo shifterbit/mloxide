@@ -14,7 +14,7 @@ impl Default for Token {
         return Token {
             literal: "".to_string(),
             token_type: TokenType::Eof,
-            position: Position::new(0, 0, 0, 0),
+            position: Position::new(0, 0, 0),
         };
     }
 }
@@ -52,7 +52,7 @@ pub enum TokenType {
     Modulo,
     Negation,
     // Values
-    Float(f64),
+    Real(f64),
     Int(i64),
     Eof,
 }
@@ -67,7 +67,7 @@ impl Display for TokenType {
             Self::Star => write!(f, "Star"),
             Self::ForwardSlash => write!(f, "ForwardSlash"),
             Self::Negation => write!(f, "Negation"),
-            Self::Float(n) => write!(f, "Float({})", n),
+            Self::Real(n) => write!(f, "Float({})", n),
             Self::Int(n) => write!(f, "Int({})", n),
             Self::Eof => write!(f, "EOF"),
             Self::Div => write!(f, "Div"),
@@ -78,32 +78,30 @@ impl Display for TokenType {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Position {
-    start_line: u32,
-    end_line: u32,
+    line: u32,
     start_column: u32,
     end_column: u32,
 }
 
 impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}:{}", self.start_line, self.start_column)
+        write!(f, "{}:{}", self.line, self.start_column)
     }
 }
 
 impl Position {
-    pub fn new(start_line: u32, end_line: u32, start_column: u32, end_column: u32) -> Position {
+    pub fn new(line: u32, start_column: u32, end_column: u32) -> Position {
         return Position {
-            start_line,
-            end_line,
+            line,
             start_column,
             end_column,
         };
     }
     pub fn new_inline(line: u32, start_column: u32, end_column: u32) -> Position {
-        return Position::new(line, line, start_column, end_column);
+        return Position::new(line, start_column, end_column);
     }
     pub fn new_single_char(line: u32, column: u32) -> Position {
-        return Position::new(line, line, column, column);
+        return Position::new(line, column, column);
     }
 }
 
@@ -213,7 +211,7 @@ fn match_number(num_str: &str, line: u32, column: u32) -> Token {
     let position = Position::new_inline(line, column, end_column);
     if num_str.contains('.') {
         let float_val: f64 = num_str.parse().unwrap();
-        return Token::new(num_str.to_string(), TokenType::Float(float_val), position);
+        return Token::new(num_str.to_string(), TokenType::Real(float_val), position);
     } else {
         let int_val: i64 = num_str.parse().unwrap();
         return Token::new(num_str.to_string(), TokenType::Int(int_val), position);

@@ -2,6 +2,7 @@ use std::{env, fs};
 
 use parser::parse;
 mod lexer;
+mod ast;
 mod parser;
 
 fn main() {
