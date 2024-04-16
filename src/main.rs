@@ -1,9 +1,12 @@
 use std::{env, fs};
 
 use parser::parse;
-mod lexer;
+
+use crate::type_checker::typecheck;
 mod ast;
+mod lexer;
 mod parser;
+mod type_checker;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -12,8 +15,6 @@ fn main() {
     let mut lexer = lexer::Lexer::new(&text.unwrap());
     let ast = parse(&mut lexer);
     println!("{:#?}", ast);
-    
+    let tast = typecheck(Box::new(ast));
+    println!("{:#?}", tast);
 }
-
-
-
