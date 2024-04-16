@@ -62,9 +62,10 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
             let l_type = typed_lhs.get_type();
             let r_type = typed_rhs.get_type();
 
-            let full_type = if l_type == r_type {
+            let full_type = if l_type == r_type && l_type != Type::Unknown {
                 l_type
             } else {
+                println!("Expected types ({l_type:#?} {op:?} {l_type:#?}) got ({l_type:#?} {op:?} {r_type:#?})");
                 Type::Unknown
             };
 
