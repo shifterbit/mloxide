@@ -1,2 +1,2 @@
-# oxide-ml
-Standard ML Implementation in Rust
+# mloxide
+ML Dialect in Rust
