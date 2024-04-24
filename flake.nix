@@ -1,5 +1,4 @@
 {
-  description = "MLOxide, a Standard ML Implementation in Rust";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };
