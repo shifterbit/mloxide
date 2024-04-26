@@ -1,95 +1,79 @@
-use crate::lexer::{Lexer, Token, TokenType};
 use crate::ast::{AstNode, Operator};
-
+use crate::lexer::{Lexer, Token, TokenType};
 
 pub fn parse(lexer: &mut Lexer) -> AstNode {
-    parse_expr(lexer, 0)
+    //      parse_expr(lexer, 0)
+    expression(lexer)
+}
+fn expression(lexer: &mut Lexer) -> AstNode {
+    term(lexer)
 }
 
-fn parse_expr(lexer: &mut Lexer, min_bp: u8) -> AstNode {
-    // Get left hand side
-    let mut lhs: AstNode = match lexer.peek() {
-        Token {
-            token_type: TokenType::Int(num),
-            ..
-        } => {
+fn term(lexer: &mut Lexer) -> AstNode {
+    let expr = factor(lexer);
+    let token = lexer.peek();
+    match token.token_type {
+        TokenType::Minus | TokenType::Plus => {
             lexer.next();
-            AstNode::Int(num)
+            let right = term(lexer);
+            return AstNode::Binary {
+                op: get_operator(token.token_type),
+                lhs: Box::new(expr),
+                rhs: Box::new(right),
+            };
         }
-        Token {
-            token_type: TokenType::Real(num),
-            ..
-        } => {
-            lexer.next();
-            AstNode::Real(num)
-        }
-        Token {
-            token_type: TokenType::Negation,
-            ..
-        } => {
-            let ((), r_bp) = prefix_binding_power(Operator::Negation);
-            lexer.next();
-            let rhs = parse_expr(lexer, r_bp);
-            AstNode::Unary { op: Operator::Negation, expr: Box::new(rhs) }
-        },
-        _t => panic!("Bad Token"),
-    };
-
-    loop {
-        // Look for next Operator
-        let op = match lexer.peek() {
-            Token {
-                token_type: TokenType::Eof,
-                ..
-            } => break,
-            Token {
-                token_type: TokenType::Plus,
-                ..
-            } => Operator::Plus,
-            Token {
-                token_type: TokenType::Minus,
-                ..
-            } => Operator::Minus,
-            Token {
-                token_type: TokenType::ForwardSlash,
-                ..
-            } => Operator::IntDivision,
-            Token {
-                token_type: TokenType::Star,
-                ..
-            } => Operator::Multiply,
-            _ => panic!("Bad Token"), // No Known Operator Found
-        };
-
-        let (l_bp, r_bp) = infix_binding_power(op);
-        // Check precedence of LHS
-        if l_bp < min_bp {
-            break; // Return lhs since pecedence is too low
-        }
-        lexer.next();
-        // Parse Right Hand Side
-        let rhs = parse_expr(lexer, r_bp);
-        // Return new Binary Expression
-        lhs = AstNode::Binary {
-            op,
-            lhs: Box::new(lhs),
-            rhs: Box::new(rhs),
-        }
-    }
-    lhs
-}
-
-fn infix_binding_power(op: Operator) -> (u8, u8) {
-    match op {
-        Operator::Plus | Operator::Minus => (1, 2),
-        Operator::Multiply | Operator::IntDivision | Operator::RealDivision => (3, 4),
-        _ => (0, 1),
+        _ => return expr,
     }
 }
 
-fn prefix_binding_power(op: Operator) -> ((), u8) {
-    match op {
-        Operator::Negation => ((), 8),
-        _ => panic!("Bad Operator"),
+fn factor(lexer: &mut Lexer) -> AstNode {
+    let expr = unary(lexer);
+    let token = lexer.peek();
+    match token.token_type {
+        TokenType::ForwardSlash | TokenType::Star => {
+            let right = factor(lexer);
+            lexer.next();
+            return AstNode::Binary {
+                op: get_operator(token.token_type),
+                lhs: Box::new(expr),
+                rhs: Box::new(right),
+            };
+        }
+        _ => return expr,
+    }
+}
+
+fn unary(lexer: &mut Lexer) -> AstNode {
+    let token = lexer.peek();
+    match token.token_type {
+        TokenType::Negation => {
+            lexer.next();
+            let expr = unary(lexer);
+            return AstNode::Unary {
+                op: get_operator(token.token_type),
+                expr: Box::new(expr),
+            };
+        }
+        _ => primary(lexer),
+    }
+}
+
+fn primary(lexer: &mut Lexer) -> AstNode {
+    let token = lexer.next();
+    match token.token_type {
+        TokenType::Int(n) => AstNode::Int(n),
+        TokenType::Real(n) => AstNode::Real(n),
+        _ => panic!("Expected Literal Value"),
+    }
+}
+
+fn get_operator(token_type: TokenType) -> Operator {
+    match token_type {
+        TokenType::Plus => Operator::Plus,
+        TokenType::Minus => Operator::Minus,
+        TokenType::Star => Operator::Multiply,
+        TokenType::ForwardSlash => Operator::RealDivision,
+        TokenType::Negation => Operator::Negation,
+        _ => panic!("Invalid Operator"),
     }
 }
