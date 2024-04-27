@@ -48,8 +48,6 @@ pub enum TokenType {
     Minus,
     Star,
     ForwardSlash,
-    Div,
-    Modulo,
     Negation,
     EqualEqual,
     NotEqual,
@@ -72,8 +70,6 @@ impl Display for TokenType {
             Self::Real(n) => write!(f, "Float({})", n),
             Self::Int(n) => write!(f, "Int({})", n),
             Self::Eof => write!(f, "EOF"),
-            Self::Div => write!(f, "Div"),
-            Self::Modulo => write!(f, "Modulo"),
             Self::EqualEqual => write!(f, "EqualEqual"),
             Self::NotEqual => write!(f, "NotEqual"),
         }

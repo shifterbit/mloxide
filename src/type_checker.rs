@@ -3,7 +3,7 @@ use crate::ast::{AstNode, Operator};
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Type {
     Int,
-    Real,
+    Float,
     Bool,
     Unknown,
 }
@@ -11,7 +11,7 @@ pub enum Type {
 #[derive(Clone, Debug)]
 pub enum TypedAstNode {
     Int(i64),
-    Real(f64),
+    Float(f64),
     Binary {
         node_type: Type,
         op: Operator,
@@ -29,7 +29,7 @@ impl TypedAstNode {
     pub fn get_type(self: &Self) -> Type {
         match self {
             TypedAstNode::Int(_) => Type::Int,
-            TypedAstNode::Real(_) => Type::Real,
+            TypedAstNode::Float(_) => Type::Float,
             TypedAstNode::Unary {
                 node_type: t,
                 op: _,
@@ -48,7 +48,7 @@ impl TypedAstNode {
 pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
     match *node {
         AstNode::Int(n) => TypedAstNode::Int(n),
-        AstNode::Real(n) => TypedAstNode::Real(n),
+        AstNode::Float(n) => TypedAstNode::Float(n),
         AstNode::Binary { op, lhs, rhs } => {
             let typed_lhs = typecheck(lhs);
             let typed_rhs = typecheck(rhs);
@@ -102,7 +102,7 @@ fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> 
 fn operator_return_types(operator: Operator) -> Vec<Type> {
     match operator {
         Operator::Add | Operator::Subtract | Operator::Negate | Operator::Multiply | Operator::Divide => {
-            return vec![Type::Int, Type::Real];
+            return vec![Type::Int, Type::Float];
         }
         Operator::Equal | Operator::NotEqual => {
             return vec![Type::Bool];
@@ -114,7 +114,7 @@ fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
     match operator {
         Operator::Add | Operator::Subtract | Operator::Multiply | Operator::Divide => match left_type {
             Type::Int => return (Type::Int, Type::Int),
-            Type::Real => return (Type::Real, Type::Real),
+            Type::Float => return (Type::Float, Type::Float),
             _ => panic!("Invalid Type"),
         },
         Operator::Equal | Operator::NotEqual => match left_type {
@@ -127,7 +127,7 @@ fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
 fn allowed_infix_op_type(operator: Operator, expr_type: Type) -> Type {
     match operator {
         Operator::Negate => {
-            let allowed_types = vec![Type::Int, Type::Real];
+            let allowed_types = vec![Type::Int, Type::Float];
             if allowed_types.contains(&expr_type) {
                 return expr_type;
             } else {

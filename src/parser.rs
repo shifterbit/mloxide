@@ -79,7 +79,7 @@ fn primary(lexer: &mut Lexer) -> AstNode {
     let token = lexer.next();
     match token.token_type {
         TokenType::Int(n) => AstNode::Int(n),
-        TokenType::Real(n) => AstNode::Real(n),
+        TokenType::Real(n) => AstNode::Float(n),
         _ => panic!("Expected Literal Value"),
     }
 }

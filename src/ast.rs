@@ -11,7 +11,7 @@ pub enum Operator {
 #[derive(Debug)]
 pub enum AstNode {
     Int(i64),
-    Real(f64),
+    Float(f64),
     Binary {
         op: Operator,
         lhs: Box<AstNode>,
