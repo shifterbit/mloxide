@@ -14,7 +14,7 @@ impl Default for Token {
         return Token {
             literal: "".to_string(),
             token_type: TokenType::Eof,
-            position: Position::new(0, 0, 0),
+            position: Position::new(0, 0),
         };
     }
 }
@@ -83,29 +83,21 @@ impl Display for TokenType {
 #[derive(Debug, Clone, Copy)]
 pub struct Position {
     line: u32,
-    start_column: u32,
-    end_column: u32,
+    column: u32,
 }
 
 impl Display for Position {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}:{}", self.line, self.start_column)
+        write!(f, "{}:{}", self.line, self.column)
     }
 }
 
 impl Position {
-    pub fn new(line: u32, start_column: u32, end_column: u32) -> Position {
+    pub fn new(line: u32, start_column: u32) -> Position {
         return Position {
             line,
-            start_column,
-            end_column,
+            column: start_column,
         };
-    }
-    pub fn new_inline(line: u32, start_column: u32, end_column: u32) -> Position {
-        return Position::new(line, start_column, end_column);
-    }
-    pub fn new_single_char(line: u32, column: u32) -> Position {
-        return Position::new(line, column, column);
     }
 }
 
@@ -176,10 +168,6 @@ impl Lexer {
     pub fn next(self: &mut Self) -> Token {
         return self.tokens.pop().unwrap_or_default();
     }
-
-    pub fn tokens(self: Self) -> Vec<Token> {
-        return self.tokens.clone();
-    }
 }
 
 static LETTERS: [char; 52] = [
@@ -219,8 +207,7 @@ fn read_number<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
 }
 
 fn match_number(num_str: &str, line: u32, column: u32) -> Token {
-    let end_column: u32 = column + num_str.len() as u32;
-    let position = Position::new_inline(line, column, end_column);
+    let position = Position::new(line, column);
     if num_str.contains('.') {
         let float_val: f64 = num_str.parse().unwrap();
         return Token::new(num_str.to_string(), TokenType::Real(float_val), position);
@@ -250,14 +237,14 @@ fn match_multi_character_token(literal: &str, line: u32, column: u32) -> Token {
             return Token {
                 token_type: TokenType::NotEqual,
                 literal: literal.to_owned(),
-                position: Position::new_inline(line, column, column + 1),
+                position: Position::new(line, column),
             };
         },
         "==" => {
             return Token {
                 token_type: TokenType::EqualEqual,
                 literal: literal.to_owned(),
-                position: Position::new_inline(line, column, column + 1),
+                position: Position::new(line, column),
             };
         },
         _ => {
@@ -275,7 +262,7 @@ fn match_single_character_token(
     line: u32,
     column: u32,
 ) -> Result<Token, InvalidTokenError> {
-    let position = Position::new_single_char(line, column);
+    let position = Position::new(line, column);
     let token_type = match character {
         '(' => TokenType::LeftParen,
         ')' => TokenType::RightParen,

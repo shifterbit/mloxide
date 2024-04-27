@@ -98,7 +98,6 @@ fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> 
         Operator::Equal | Operator::NotEqual => return Type::Bool,
         Operator::IntDivision => return Type::Int,
         Operator::RealDivision => return Type::Real,
-        _ => return Type::Unknown,
     }
 }
 
