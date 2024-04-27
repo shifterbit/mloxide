@@ -51,6 +51,8 @@ pub enum TokenType {
     Div,
     Modulo,
     Negation,
+    EqualEqual,
+    NotEqual,
     // Values
     Real(f64),
     Int(i64),
@@ -72,6 +74,8 @@ impl Display for TokenType {
             Self::Eof => write!(f, "EOF"),
             Self::Div => write!(f, "Div"),
             Self::Modulo => write!(f, "Modulo"),
+            Self::EqualEqual => write!(f, "EqualEqual"),
+            Self::NotEqual => write!(f, "NotEqual"),
         }
     }
 }
@@ -129,6 +133,14 @@ impl Lexer {
                 }
                 '\t' => {
                     column += 4;
+                    chars.next();
+                }
+                '=' | '!' => {
+                    let literal = read_multi_character_token(&mut chars);
+                    let length = literal.len() as u32;
+                    let token = match_multi_character_token(&literal, line, column);
+                    tokens.push(token);
+                    column += length;
                     chars.next();
                 }
                 '(' | ')' | '+' | '-' | '*' | '/' | '~' => {
@@ -215,6 +227,44 @@ fn match_number(num_str: &str, line: u32, column: u32) -> Token {
     } else {
         let int_val: i64 = num_str.parse().unwrap();
         return Token::new(num_str.to_string(), TokenType::Int(int_val), position);
+    }
+}
+
+fn read_multi_character_token<I: Iterator<Item = char>>(
+    chars: &mut Peekable<I>,
+) -> String {
+    let mut literal: String = chars.peek().unwrap().to_string();
+
+    match chars.next() {
+        Some('=') => {
+            literal.push('=');
+        }
+        _ => {}
+    };
+    return literal;
+}
+
+fn match_multi_character_token(literal: &str, line: u32, column: u32) -> Token {
+    match literal {
+        "!=" => {
+            return Token {
+                token_type: TokenType::NotEqual,
+                literal: literal.to_owned(),
+                position: Position::new_inline(line, column, column + 1),
+            };
+        },
+        "==" => {
+            return Token {
+                token_type: TokenType::EqualEqual,
+                literal: literal.to_owned(),
+                position: Position::new_inline(line, column, column + 1),
+            };
+        },
+        _ => {
+            panic!("Unexpected Character")
+        }
+        
+        
     }
 }
 

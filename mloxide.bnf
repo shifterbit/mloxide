@@ -1,3 +1,4 @@
+<equality> ::= <term> ("==" | "!=") <term> | <equality>
 <term> ::= <factor> ("+" | "-") <term> | <factor>
 <factor> ::= <unary> ("/" | "*") <factor> | <unary>
 <unary> ::= <literal> | ("~") <unary>

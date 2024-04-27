@@ -6,6 +6,8 @@ pub enum Operator {
     IntDivision,
     RealDivision,
     Multiply,
+    Equal,
+    NotEqual
 }
 #[derive(Debug)]
 pub enum AstNode {

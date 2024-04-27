@@ -6,7 +6,24 @@ pub fn parse(lexer: &mut Lexer) -> AstNode {
     expression(lexer)
 }
 fn expression(lexer: &mut Lexer) -> AstNode {
-    term(lexer)
+    equality(lexer)
+}
+
+fn equality(lexer: &mut Lexer) -> AstNode {
+    let expr = term(lexer);
+    let token = lexer.peek();
+    match token.token_type {
+        TokenType::EqualEqual | TokenType::NotEqual => {
+            lexer.next();
+            let right = equality(lexer);
+            return AstNode::Binary {
+                op: get_operator(token.token_type),
+                lhs: Box::new(expr),
+                rhs: Box::new(right),
+            };
+        }
+        _ => return expr,
+    }
 }
 
 fn term(lexer: &mut Lexer) -> AstNode {
@@ -74,6 +91,8 @@ fn get_operator(token_type: TokenType) -> Operator {
         TokenType::Star => Operator::Multiply,
         TokenType::ForwardSlash => Operator::RealDivision,
         TokenType::Negation => Operator::Negation,
+        TokenType::EqualEqual => Operator::Equal,
+        TokenType::NotEqual => Operator::NotEqual,
         _ => panic!("Invalid Operator"),
     }
 }
