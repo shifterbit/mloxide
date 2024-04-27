@@ -1,7 +1,7 @@
 use crate::ast::{AstNode, Operator};
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-enum Type {
+pub enum Type {
     Int,
     Real,
     Unknown,
@@ -12,13 +12,13 @@ pub enum TypedAstNode {
     Int(i64),
     Real(f64),
     Binary {
-        nodeType: Type,
+        node_type: Type,
         op: Operator,
         lhs: Box<TypedAstNode>,
         rhs: Box<TypedAstNode>,
     },
     Unary {
-        nodeType: Type,
+        node_type: Type,
         op: Operator,
         expr: Box<TypedAstNode>,
     },
@@ -29,13 +29,13 @@ impl TypedAstNode {
         match self {
             TypedAstNode::Int(_) => Type::Int,
             TypedAstNode::Real(_) => Type::Real,
-            TypedAstNode::Unary { nodeType, op, expr } => {
+            TypedAstNode::Unary { node_type: _, op: _, expr } => {
                 let expr_type = expr.get_type();
                 return expr_type;
             }
             TypedAstNode::Binary {
-                nodeType,
-                op,
+                node_type: _,
+                op: _,
                 lhs,
                 rhs,
             } => {
@@ -70,7 +70,7 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
             };
 
             return TypedAstNode::Binary {
-                nodeType: full_type,
+                node_type: full_type,
                 op,
                 lhs: Box::new(typed_lhs),
                 rhs: Box::new(typed_rhs),
@@ -79,7 +79,7 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
         AstNode::Unary { op, expr } => {
             let typed_expr = typecheck(expr);
             let e_type = typed_expr.get_type();
-            return TypedAstNode::Unary { nodeType: e_type, op, expr: Box::new(typed_expr) };
+            return TypedAstNode::Unary { node_type: e_type, op, expr: Box::new(typed_expr) };
         }
     }
 }
