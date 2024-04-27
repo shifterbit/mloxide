@@ -84,7 +84,7 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
 
 fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> Type {
     match operator {
-        Operator::Plus | Operator::Minus | Operator::Negation | Operator::Multiply | Operator::Divide => {
+        Operator::Add | Operator::Subtract | Operator::Negate | Operator::Multiply | Operator::Divide => {
             let allowed_types = operator_return_types(operator);
             let left_valid = allowed_types.contains(&left_type);
             let right_valid = allowed_types.contains(&right_type);
@@ -101,7 +101,7 @@ fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> 
 
 fn operator_return_types(operator: Operator) -> Vec<Type> {
     match operator {
-        Operator::Plus | Operator::Minus | Operator::Negation | Operator::Multiply | Operator::Divide => {
+        Operator::Add | Operator::Subtract | Operator::Negate | Operator::Multiply | Operator::Divide => {
             return vec![Type::Int, Type::Real];
         }
         Operator::Equal | Operator::NotEqual => {
@@ -112,7 +112,7 @@ fn operator_return_types(operator: Operator) -> Vec<Type> {
 }
 fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
     match operator {
-        Operator::Plus | Operator::Minus | Operator::Multiply | Operator::Divide => match left_type {
+        Operator::Add | Operator::Subtract | Operator::Multiply | Operator::Divide => match left_type {
             Type::Int => return (Type::Int, Type::Int),
             Type::Real => return (Type::Real, Type::Real),
             _ => panic!("Invalid Type"),
@@ -126,7 +126,7 @@ fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
 
 fn allowed_infix_op_type(operator: Operator, expr_type: Type) -> Type {
     match operator {
-        Operator::Negation => {
+        Operator::Negate => {
             let allowed_types = vec![Type::Int, Type::Real];
             if allowed_types.contains(&expr_type) {
                 return expr_type;

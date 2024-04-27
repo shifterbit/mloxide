@@ -1,8 +1,8 @@
 #[derive(Debug, Clone, Copy)]
 pub enum Operator {
-    Plus,
-    Minus,
-    Negation,
+    Add,
+    Subtract,
+    Negate,
     Divide,
     Multiply,
     Equal,

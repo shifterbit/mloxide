@@ -86,11 +86,11 @@ fn primary(lexer: &mut Lexer) -> AstNode {
 
 fn get_operator(token_type: TokenType) -> Operator {
     match token_type {
-        TokenType::Plus => Operator::Plus,
-        TokenType::Minus => Operator::Minus,
+        TokenType::Plus => Operator::Add,
+        TokenType::Minus => Operator::Subtract,
         TokenType::Star => Operator::Multiply,
         TokenType::ForwardSlash => Operator::Divide,
-        TokenType::Negation => Operator::Negation,
+        TokenType::Negation => Operator::Negate,
         TokenType::EqualEqual => Operator::Equal,
         TokenType::NotEqual => Operator::NotEqual,
         _ => panic!("Invalid Operator"),
