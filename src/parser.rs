@@ -89,7 +89,7 @@ fn get_operator(token_type: TokenType) -> Operator {
         TokenType::Plus => Operator::Plus,
         TokenType::Minus => Operator::Minus,
         TokenType::Star => Operator::Multiply,
-        TokenType::ForwardSlash => Operator::RealDivision,
+        TokenType::ForwardSlash => Operator::Divide,
         TokenType::Negation => Operator::Negation,
         TokenType::EqualEqual => Operator::Equal,
         TokenType::NotEqual => Operator::NotEqual,

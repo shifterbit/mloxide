@@ -3,8 +3,7 @@ pub enum Operator {
     Plus,
     Minus,
     Negation,
-    IntDivision,
-    RealDivision,
+    Divide,
     Multiply,
     Equal,
     NotEqual

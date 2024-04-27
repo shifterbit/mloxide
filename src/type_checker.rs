@@ -84,7 +84,7 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
 
 fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> Type {
     match operator {
-        Operator::Plus | Operator::Minus | Operator::Negation | Operator::Multiply => {
+        Operator::Plus | Operator::Minus | Operator::Negation | Operator::Multiply | Operator::Divide => {
             let allowed_types = operator_return_types(operator);
             let left_valid = allowed_types.contains(&left_type);
             let right_valid = allowed_types.contains(&right_type);
@@ -96,30 +96,23 @@ fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> 
             }
         }
         Operator::Equal | Operator::NotEqual => return Type::Bool,
-        Operator::IntDivision => return Type::Int,
-        Operator::RealDivision => return Type::Real,
     }
 }
 
 fn operator_return_types(operator: Operator) -> Vec<Type> {
     match operator {
-        Operator::Plus | Operator::Minus | Operator::Negation | Operator::Multiply => {
+        Operator::Plus | Operator::Minus | Operator::Negation | Operator::Multiply | Operator::Divide => {
             return vec![Type::Int, Type::Real];
         }
         Operator::Equal | Operator::NotEqual => {
             return vec![Type::Bool];
         }
-        Operator::IntDivision => {
-            return vec![Type::Int];
-        }
-        Operator::RealDivision => {
-            return vec![Type::Real];
-        }
+
     }
 }
 fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
     match operator {
-        Operator::Plus | Operator::Minus | Operator::Multiply => match left_type {
+        Operator::Plus | Operator::Minus | Operator::Multiply | Operator::Divide => match left_type {
             Type::Int => return (Type::Int, Type::Int),
             Type::Real => return (Type::Real, Type::Real),
             _ => panic!("Invalid Type"),
@@ -127,8 +120,6 @@ fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
         Operator::Equal | Operator::NotEqual => match left_type {
             t => return (t.clone(), t),
         },
-        Operator::IntDivision => return (Type::Int, Type::Int),
-        Operator::RealDivision => return (Type::Real, Type::Real),
         _ => panic!("Expected Binary Operator"),
     }
 }
