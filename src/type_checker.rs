@@ -31,27 +31,16 @@ impl TypedAstNode {
             TypedAstNode::Int(_) => Type::Int,
             TypedAstNode::Real(_) => Type::Real,
             TypedAstNode::Unary {
-                node_type: _,
+                node_type: t,
                 op: _,
-                expr,
-            } => {
-                let expr_type = expr.get_type();
-                return expr_type;
-            }
+                expr: _,
+            } => return t.clone(),
             TypedAstNode::Binary {
-                node_type: _,
+                node_type: t,
                 op: _,
-                lhs,
-                rhs,
-            } => {
-                let lhs_type = lhs.get_type();
-                let rhs_type = rhs.get_type();
-                if lhs_type == rhs_type {
-                    return lhs_type;
-                } else {
-                    return Type::Unknown;
-                }
-            }
+                lhs: _,
+                rhs: _,
+            } => t.clone(),
         }
     }
 }
