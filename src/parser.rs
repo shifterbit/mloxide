@@ -80,6 +80,8 @@ fn primary(lexer: &mut Lexer) -> AstNode {
     match token.token_type {
         TokenType::Int(n) => AstNode::Int(n),
         TokenType::Float(n) => AstNode::Float(n),
+        TokenType::Bool(b) => AstNode::Bool(b),
+        TokenType::Identifier(i) => AstNode::Identifier(i),
         _ => panic!("Expected Literal Value"),
     }
 }

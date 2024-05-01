@@ -12,6 +12,8 @@ pub enum Type {
 pub enum TypedAstNode {
     Int(i64),
     Float(f64),
+    Bool(bool),
+    Identifier(String),
     Binary {
         node_type: Type,
         op: Operator,
@@ -30,6 +32,8 @@ impl TypedAstNode {
         match self {
             TypedAstNode::Int(_) => Type::Int,
             TypedAstNode::Float(_) => Type::Float,
+            TypedAstNode::Bool(_) => Type::Bool,
+            TypedAstNode::Identifier(_) => Type::Unknown,
             TypedAstNode::Unary {
                 node_type: t,
                 op: _,
@@ -49,6 +53,8 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
     match *node {
         AstNode::Int(n) => TypedAstNode::Int(n),
         AstNode::Float(n) => TypedAstNode::Float(n),
+        AstNode::Bool(b) => TypedAstNode::Bool(b),
+        AstNode::Identifier(i) => TypedAstNode::Identifier(i),
         AstNode::Binary { op, lhs, rhs } => {
             let typed_lhs = typecheck(lhs);
             let typed_rhs = typecheck(rhs);

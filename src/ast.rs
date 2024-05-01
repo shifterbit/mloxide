@@ -12,6 +12,8 @@ pub enum Operator {
 pub enum AstNode {
     Int(i64),
     Float(f64),
+    Bool(bool),
+    Identifier(String),
     Binary {
         op: Operator,
         lhs: Box<AstNode>,

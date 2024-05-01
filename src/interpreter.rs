@@ -11,6 +11,8 @@ pub fn eval_expression(ast: TypedAstNode) -> Value {
     match ast {
         TypedAstNode::Int(n) => Value::Int(n),
         TypedAstNode::Float(n) => Value::Float(n),
+        TypedAstNode::Bool(b) => Value::Bool(b),
+        TypedAstNode::Identifier(i) => todo!(),
         TypedAstNode::Binary {
             node_type: _,
             op,
