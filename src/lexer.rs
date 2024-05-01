@@ -39,7 +39,7 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
     // Single Character Token
     LeftParen,
@@ -54,7 +54,11 @@ pub enum TokenType {
     // Values
     Float(f64),
     Int(i64),
-    
+    Bool(bool),
+
+    // Identifier
+    Identifier(String),
+
     // EOF
     Eof,
 }
@@ -62,18 +66,20 @@ pub enum TokenType {
 impl Display for TokenType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::LeftParen => write!(f, "LeftParen"),
-            Self::RightParen => write!(f, "RightParen"),
-            Self::Plus => write!(f, "Plus"),
-            Self::Minus => write!(f, "Minus"),
-            Self::Star => write!(f, "Star"),
-            Self::ForwardSlash => write!(f, "ForwardSlash"),
-            Self::Negation => write!(f, "Negation"),
-            Self::Float(n) => write!(f, "Float({})", n),
-            Self::Int(n) => write!(f, "Int({})", n),
-            Self::Eof => write!(f, "EOF"),
-            Self::EqualEqual => write!(f, "EqualEqual"),
-            Self::NotEqual => write!(f, "NotEqual"),
+            TokenType::LeftParen => write!(f, "LeftParen"),
+            TokenType::RightParen => write!(f, "RightParen"),
+            TokenType::Plus => write!(f, "Plus"),
+            TokenType::Minus => write!(f, "Minus"),
+            TokenType::Star => write!(f, "Star"),
+            TokenType::ForwardSlash => write!(f, "ForwardSlash"),
+            TokenType::Negation => write!(f, "Negation"),
+            TokenType::Float(n) => write!(f, "Float({})", n),
+            TokenType::Int(n) => write!(f, "Int({})", n),
+            TokenType::Eof => write!(f, "EOF"),
+            TokenType::EqualEqual => write!(f, "EqualEqual"),
+            TokenType::NotEqual => write!(f, "NotEqual"),
+            TokenType::Bool(b) => write!(f, "Bool({})", b),
+            TokenType::Identifier(i) => write!(f, "Identifier({})", i),
         }
     }
 }
@@ -147,8 +153,12 @@ impl Lexer {
                     column += length;
                 }
                 _c if is_alpha(character) => {
-                    column += 1;
-                    chars.next();
+                    let literal = read_indentifier(&mut chars);
+                    let length = literal.len() as u32;
+                    let token_type = match_keywords(&literal);
+                    let token = Token {token_type, literal, position: Position::new(line, column)};
+                    tokens.push(token);
+                    column += length;
                 }
                 _ => {
                     column += 1;
@@ -159,7 +169,7 @@ impl Lexer {
         tokens.reverse();
         return Lexer { tokens };
     }
-    pub fn peek(self: &Self) -> Token {
+    pub fn peek(self: &Lexer) -> Token {
         let token = self.tokens.last().cloned().unwrap_or_default();
         return token;
     }
@@ -175,6 +185,27 @@ static LETTERS: [char; 52] = [
 ];
 
 static DIGITS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+fn read_indentifier<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
+    let mut literal: String = "".to_string();
+    while let Some(c) = chars.peek() {
+        if LETTERS.contains(c) || DIGITS.contains(c) || c.to_owned() == '_' {
+            literal.push(c.to_owned());
+            chars.next();
+        } else {
+            break;
+        }
+    }
+    return literal;
+}
+
+fn match_keywords(literal: &str) -> TokenType {
+    match literal {
+        "true" => TokenType::Bool(true),
+        "false" => TokenType::Bool(false),
+        _ => TokenType::Identifier(literal.to_owned()),
+    }
+}
 
 fn is_alpha(character: &char) -> bool {
     return LETTERS.contains(character);
@@ -215,9 +246,7 @@ fn match_number(num_str: &str, line: u32, column: u32) -> Token {
     }
 }
 
-fn read_multi_character_token<I: Iterator<Item = char>>(
-    chars: &mut Peekable<I>,
-) -> String {
+fn read_multi_character_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
     let mut literal: String = chars.peek().unwrap().to_string();
 
     match chars.next() {
@@ -237,19 +266,17 @@ fn match_multi_character_token(literal: &str, line: u32, column: u32) -> Token {
                 literal: literal.to_owned(),
                 position: Position::new(line, column),
             };
-        },
+        }
         "==" => {
             return Token {
                 token_type: TokenType::EqualEqual,
                 literal: literal.to_owned(),
                 position: Position::new(line, column),
             };
-        },
+        }
         _ => {
             panic!("Unexpected Character")
         }
-        
-        
     }
 }
 
