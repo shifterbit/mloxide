@@ -52,8 +52,10 @@ pub enum TokenType {
     EqualEqual,
     NotEqual,
     // Values
-    Real(f64),
+    Float(f64),
     Int(i64),
+    
+    // EOF
     Eof,
 }
 
@@ -67,7 +69,7 @@ impl Display for TokenType {
             Self::Star => write!(f, "Star"),
             Self::ForwardSlash => write!(f, "ForwardSlash"),
             Self::Negation => write!(f, "Negation"),
-            Self::Real(n) => write!(f, "Float({})", n),
+            Self::Float(n) => write!(f, "Float({})", n),
             Self::Int(n) => write!(f, "Int({})", n),
             Self::Eof => write!(f, "EOF"),
             Self::EqualEqual => write!(f, "EqualEqual"),
@@ -206,7 +208,7 @@ fn match_number(num_str: &str, line: u32, column: u32) -> Token {
     let position = Position::new(line, column);
     if num_str.contains('.') {
         let float_val: f64 = num_str.parse().unwrap();
-        return Token::new(num_str.to_string(), TokenType::Real(float_val), position);
+        return Token::new(num_str.to_string(), TokenType::Float(float_val), position);
     } else {
         let int_val: i64 = num_str.parse().unwrap();
         return Token::new(num_str.to_string(), TokenType::Int(int_val), position);
