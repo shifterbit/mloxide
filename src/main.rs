@@ -4,6 +4,7 @@ use parser::parse;
 
 use crate::{interpreter::eval_expression, type_checker::typecheck};
 mod ast;
+mod token;
 mod lexer;
 mod parser;
 mod type_checker;

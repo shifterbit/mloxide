@@ -1,5 +1,6 @@
 use crate::ast::{AstNode, Operator};
-use crate::lexer::{Lexer, TokenType};
+use crate::lexer::{Lexer};
+use crate::token::TokenType;
 
 pub fn parse(lexer: &mut Lexer) -> AstNode {
     //      parse_expr(lexer, 0)
