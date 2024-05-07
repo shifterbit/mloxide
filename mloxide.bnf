@@ -1,3 +1,5 @@
+<expression> ::= <equality> | <if-expression>
+<if-expression> ::= "if" <expression> "then" <expression> "else" <expression>
 <equality> ::= <term> ("==" | "!=") <term> | <equality>
 <term> ::= <factor> ("+" | "-") <term> | <factor>
 <factor> ::= <unary> ("/" | "*") <factor> | <unary>

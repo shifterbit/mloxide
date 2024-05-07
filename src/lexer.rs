@@ -1,7 +1,5 @@
-use std::fmt;
-use std::fmt::Display;
 use std::iter::Peekable;
-use crate::token::*;
+use crate::token::{Position, Token, TokenType};
 
 
 #[derive(Debug)]
@@ -102,6 +100,9 @@ fn match_keywords(literal: &str) -> TokenType {
     match literal {
         "true" => TokenType::Bool(true),
         "false" => TokenType::Bool(false),
+        "if" => TokenType::If,
+        "then" => TokenType::Then,
+        "else" => TokenType::Else,
         _ => TokenType::Identifier(literal.to_owned()),
     }
 }

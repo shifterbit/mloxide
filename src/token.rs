@@ -37,7 +37,7 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     // Single Character Token
     LeftParen,
@@ -56,6 +56,11 @@ pub enum TokenType {
 
     // Identifier
     Identifier(String),
+
+    // Conditionals
+    If,
+    Then,
+    Else,
 
     // EOF
     Eof,
@@ -77,7 +82,11 @@ impl Display for TokenType {
             TokenType::EqualEqual => write!(f, "EqualEqual"),
             TokenType::NotEqual => write!(f, "NotEqual"),
             TokenType::Bool(b) => write!(f, "Bool({})", b),
+            TokenType::If => write!(f, "If"),
+            TokenType::Then => write!(f, "Then"),
+            TokenType::Else => write!(f, "Else"),
             TokenType::Identifier(i) => write!(f, "Identifier({})", i),
+            
         }
     }
 }

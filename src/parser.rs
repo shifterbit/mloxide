@@ -1,5 +1,5 @@
 use crate::ast::{AstNode, Operator};
-use crate::lexer::{Lexer};
+use crate::lexer::Lexer;
 use crate::token::TokenType;
 
 pub fn parse(lexer: &mut Lexer) -> AstNode {
@@ -7,7 +7,36 @@ pub fn parse(lexer: &mut Lexer) -> AstNode {
     expression(lexer)
 }
 fn expression(lexer: &mut Lexer) -> AstNode {
-    equality(lexer)
+    let curr = lexer.peek();
+    let token_type = curr.token_type;
+    match token_type {
+        TokenType::If => if_expression(lexer),
+        _ => equality(lexer),
+    }
+}
+
+fn if_expression(lexer: &mut Lexer) -> AstNode {
+    let if_tok = lexer.next();
+    if if_tok.token_type != TokenType::If {
+        panic!("Expected If Token")
+    }
+    let condition = expression(lexer);
+    let then_tok = lexer.next();
+    if then_tok.token_type != TokenType::Then {
+        panic!("Expected Then Token")
+    }
+    let if_body = expression(lexer);
+    let else_tok = lexer.next();
+    if else_tok.token_type != TokenType::Else {
+        panic!("Expected Else Token")
+    }
+    let else_body = expression(lexer);
+
+    AstNode::If {
+        condition: Box::new(condition),
+        if_body: Box::new(if_body),
+        else_body: Box::new(else_body),
+    }
 }
 
 fn equality(lexer: &mut Lexer) -> AstNode {

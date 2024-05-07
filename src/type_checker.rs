@@ -25,6 +25,12 @@ pub enum TypedAstNode {
         op: Operator,
         expr: Box<TypedAstNode>,
     },
+    If {
+        node_type: Type,
+        condition: Box<TypedAstNode>,
+        if_body: Box<TypedAstNode>,
+        else_body: Box<TypedAstNode>,
+    },
 }
 
 impl TypedAstNode {
@@ -38,13 +44,14 @@ impl TypedAstNode {
                 node_type: t,
                 op: _,
                 expr: _,
-            } => return t.clone(),
+            } => t.clone(),
             TypedAstNode::Binary {
                 node_type: t,
                 op: _,
                 lhs: _,
                 rhs: _,
             } => t.clone(),
+            TypedAstNode::If { node_type: t, condition: _, if_body: _, else_body: _ } => t.clone()
         }
     }
 }
@@ -85,12 +92,39 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
                 expr: Box::new(typed_expr),
             };
         }
+        AstNode::If {
+            condition,
+            if_body,
+            else_body,
+        } => {
+            let condition_typed = typecheck(condition);
+            let if_body_typed = typecheck(if_body);
+            let else_body_typed = typecheck(else_body);
+
+            let full_type = if if_body_typed.get_type() == else_body_typed.get_type() {
+                if_body_typed.get_type()
+            } else {
+                Type::Unknown
+            };
+
+
+            return TypedAstNode::If {
+                node_type: full_type,
+                condition: Box::new(condition_typed),
+                if_body: Box::new(if_body_typed),
+                else_body: Box::new(else_body_typed),
+            };
+        }
     }
 }
 
 fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> Type {
     match operator {
-        Operator::Add | Operator::Subtract | Operator::Negate | Operator::Multiply | Operator::Divide => {
+        Operator::Add
+        | Operator::Subtract
+        | Operator::Negate
+        | Operator::Multiply
+        | Operator::Divide => {
             let allowed_types = operator_return_types(operator);
             let left_valid = allowed_types.contains(&left_type);
             let right_valid = allowed_types.contains(&right_type);
@@ -107,22 +141,27 @@ fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> 
 
 fn operator_return_types(operator: Operator) -> Vec<Type> {
     match operator {
-        Operator::Add | Operator::Subtract | Operator::Negate | Operator::Multiply | Operator::Divide => {
+        Operator::Add
+        | Operator::Subtract
+        | Operator::Negate
+        | Operator::Multiply
+        | Operator::Divide => {
             return vec![Type::Int, Type::Float];
         }
         Operator::Equal | Operator::NotEqual => {
             return vec![Type::Bool];
         }
-
     }
 }
 fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
     match operator {
-        Operator::Add | Operator::Subtract | Operator::Multiply | Operator::Divide => match left_type {
-            Type::Int => return (Type::Int, Type::Int),
-            Type::Float => return (Type::Float, Type::Float),
-            _ => panic!("Invalid Type"),
-        },
+        Operator::Add | Operator::Subtract | Operator::Multiply | Operator::Divide => {
+            match left_type {
+                Type::Int => return (Type::Int, Type::Int),
+                Type::Float => return (Type::Float, Type::Float),
+                _ => panic!("Invalid Type"),
+            }
+        }
         Operator::Equal | Operator::NotEqual => match left_type {
             t => return (t.clone(), t),
         },

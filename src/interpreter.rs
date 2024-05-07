@@ -26,7 +26,18 @@ pub fn eval_expression(ast: TypedAstNode) -> Value {
             op,
             expr,
         } => eval_unary(op, *expr),
+        TypedAstNode::If { node_type, condition, if_body, else_body } => eval_if_expression(*condition, *if_body, *else_body),
     }
+}
+
+fn eval_if_expression(condition: TypedAstNode, if_body: TypedAstNode, else_body:TypedAstNode) -> Value {
+    let condition = eval_expression(condition);
+    match condition {
+        Value::Bool(true) => eval_expression(if_body),
+        Value::Bool(false) => eval_expression(else_body),
+        _ => panic!("Expected Boolean Value for condition")
+    }
+    
 }
 
 fn eval_binary(op: Operator, left: TypedAstNode, right: TypedAstNode) -> Value {

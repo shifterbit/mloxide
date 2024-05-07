@@ -23,4 +23,9 @@ pub enum AstNode {
         op: Operator,
         expr: Box<AstNode>,
     },
+    If {
+        condition: Box<AstNode>,
+        if_body: Box<AstNode>,
+        else_body: Box<AstNode>
+    }
 }
