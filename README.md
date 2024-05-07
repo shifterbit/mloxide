@@ -23,7 +23,7 @@ else 9
 
 ## TODO
 - [x] Ints
-- [x] Bools
+- [x] Booleans
 - [ ] Strings
 - [ ] Lists
 - [x] Arithmetic Expressions
