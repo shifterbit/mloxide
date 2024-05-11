@@ -9,11 +9,11 @@ pub struct Token {
 
 impl Default for Token {
     fn default() -> Self {
-        return Token {
+        Token {
             literal: "".to_string(),
             token_type: TokenType::Eof,
             position: Position::new(0, 0),
-        };
+        }
     }
 }
 
@@ -29,11 +29,11 @@ impl Display for Token {
 
 impl Token {
     pub fn new(literal: String, token_type: TokenType, position: Position) -> Token {
-        return Token {
+        Token {
             literal,
             token_type,
             position,
-        };
+        }
     }
 }
 
@@ -105,9 +105,9 @@ impl Display for Position {
 
 impl Position {
     pub fn new(line: u32, start_column: u32) -> Position {
-        return Position {
+        Position {
             line,
             column: start_column,
-        };
+        }
     }
 }

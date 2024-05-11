@@ -34,7 +34,7 @@ pub enum TypedAstNode {
 }
 
 impl TypedAstNode {
-    pub fn get_type(self: &Self) -> Type {
+    pub fn get_type(&self) -> Type {
         match self {
             TypedAstNode::Int(_) => Type::Int,
             TypedAstNode::Float(_) => Type::Float,
@@ -56,15 +56,15 @@ impl TypedAstNode {
     }
 }
 
-pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
-    match *node {
+pub fn typecheck(node: AstNode) -> TypedAstNode {
+    match node {
         AstNode::Int(n) => TypedAstNode::Int(n),
         AstNode::Float(n) => TypedAstNode::Float(n),
         AstNode::Bool(b) => TypedAstNode::Bool(b),
         AstNode::Identifier(i) => TypedAstNode::Identifier(i),
         AstNode::Binary { op, lhs, rhs } => {
-            let typed_lhs = typecheck(lhs);
-            let typed_rhs = typecheck(rhs);
+            let typed_lhs = typecheck(*lhs);
+            let typed_rhs = typecheck(*rhs);
             let l_type = typed_lhs.get_type();
             let r_type = typed_rhs.get_type();
             let (l_expected, r_expected) = allowed_binary_op_type(op, l_type.clone());
@@ -75,31 +75,31 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
                 Type::Unknown
             };
 
-            return TypedAstNode::Binary {
+            TypedAstNode::Binary {
                 node_type: full_type,
                 op,
                 lhs: Box::new(typed_lhs),
                 rhs: Box::new(typed_rhs),
-            };
+            }
         }
         AstNode::Unary { op, expr } => {
-            let typed_expr = typecheck(expr);
+            let typed_expr = typecheck(*expr);
             let e_type = typed_expr.get_type();
             let expected_type = allowed_infix_op_type(op, e_type.clone());
-            return TypedAstNode::Unary {
+            TypedAstNode::Unary {
                 node_type: expected_type,
                 op,
                 expr: Box::new(typed_expr),
-            };
+            }
         }
         AstNode::If {
             condition,
             if_body,
             else_body,
         } => {
-            let condition_typed = typecheck(condition);
-            let if_body_typed = typecheck(if_body);
-            let else_body_typed = typecheck(else_body);
+            let condition_typed = typecheck(*condition);
+            let if_body_typed = typecheck(*if_body);
+            let else_body_typed = typecheck(*else_body);
 
             let full_type = if if_body_typed.get_type() == else_body_typed.get_type() {
                 if_body_typed.get_type()
@@ -108,12 +108,12 @@ pub fn typecheck(node: Box<AstNode>) -> TypedAstNode {
             };
 
 
-            return TypedAstNode::If {
+            TypedAstNode::If {
                 node_type: full_type,
                 condition: Box::new(condition_typed),
                 if_body: Box::new(if_body_typed),
                 else_body: Box::new(else_body_typed),
-            };
+            }
         }
     }
 }
@@ -130,12 +130,12 @@ fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> 
             let right_valid = allowed_types.contains(&right_type);
             let both_valid = left_valid && right_valid;
             if allowed_types.contains(&left_type) && both_valid {
-                return left_type;
+                left_type
             } else {
-                return Type::Unknown;
+                Type::Unknown
             }
         }
-        Operator::Equal | Operator::NotEqual => return Type::Bool,
+        Operator::Equal | Operator::NotEqual => Type::Bool,
     }
 }
 
@@ -146,10 +146,10 @@ fn operator_return_types(operator: Operator) -> Vec<Type> {
         | Operator::Negate
         | Operator::Multiply
         | Operator::Divide => {
-            return vec![Type::Int, Type::Float];
+            vec![Type::Int, Type::Float]
         }
         Operator::Equal | Operator::NotEqual => {
-            return vec![Type::Bool];
+            vec![Type::Bool]
         }
     }
 }
@@ -157,14 +157,12 @@ fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
     match operator {
         Operator::Add | Operator::Subtract | Operator::Multiply | Operator::Divide => {
             match left_type {
-                Type::Int => return (Type::Int, Type::Int),
-                Type::Float => return (Type::Float, Type::Float),
+                Type::Int => (Type::Int, Type::Int),
+                Type::Float => (Type::Float, Type::Float),
                 _ => panic!("Invalid Type"),
             }
         }
-        Operator::Equal | Operator::NotEqual => match left_type {
-            t => return (t.clone(), t),
-        },
+        Operator::Equal | Operator::NotEqual => (left_type.clone(), left_type),
         _ => panic!("Expected Binary Operator"),
     }
 }
@@ -174,9 +172,9 @@ fn allowed_infix_op_type(operator: Operator, expr_type: Type) -> Type {
         Operator::Negate => {
             let allowed_types = vec![Type::Int, Type::Float];
             if allowed_types.contains(&expr_type) {
-                return expr_type;
+                expr_type
             } else {
-                return Type::Unknown;
+                Type::Unknown
             }
         }
         _ => Type::Unknown,

@@ -12,7 +12,7 @@ pub fn eval_expression(ast: TypedAstNode) -> Value {
         TypedAstNode::Int(n) => Value::Int(n),
         TypedAstNode::Float(n) => Value::Float(n),
         TypedAstNode::Bool(b) => Value::Bool(b),
-        TypedAstNode::Identifier(i) => todo!(),
+        TypedAstNode::Identifier(_i) => todo!(),
         TypedAstNode::Binary {
             node_type: _,
             op,
@@ -26,7 +26,7 @@ pub fn eval_expression(ast: TypedAstNode) -> Value {
             op,
             expr,
         } => eval_unary(op, *expr),
-        TypedAstNode::If { node_type, condition, if_body, else_body } => eval_if_expression(*condition, *if_body, *else_body),
+        TypedAstNode::If { node_type: _, condition, if_body, else_body } => eval_if_expression(*condition, *if_body, *else_body),
     }
 }
 

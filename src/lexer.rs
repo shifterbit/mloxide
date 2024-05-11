@@ -64,14 +64,14 @@ impl Lexer {
             }
         }
         tokens.reverse();
-        return Lexer { tokens };
+        Lexer { tokens }
     }
     pub fn peek(self: &Lexer) -> Token {
         let token = self.tokens.last().cloned().unwrap_or_default();
-        return token;
+        token
     }
-    pub fn next(self: &mut Self) -> Token {
-        return self.tokens.pop().unwrap_or_default();
+    pub fn next(&mut self) -> Token {
+        self.tokens.pop().unwrap_or_default()
     }
 }
 
@@ -86,14 +86,14 @@ static DIGITS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 fn read_indentifier<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
     let mut literal: String = "".to_string();
     while let Some(c) = chars.peek() {
-        if LETTERS.contains(c) || DIGITS.contains(c) || c.to_owned() == '_' {
+        if LETTERS.contains(c) || DIGITS.contains(c) || *c == '_' {
             literal.push(c.to_owned());
             chars.next();
         } else {
             break;
         }
     }
-    return literal;
+    literal
 }
 
 fn match_keywords(literal: &str) -> TokenType {
@@ -108,11 +108,11 @@ fn match_keywords(literal: &str) -> TokenType {
 }
 
 fn is_alpha(character: &char) -> bool {
-    return LETTERS.contains(character);
+    LETTERS.contains(character)
 }
 
 fn is_digit(character: &char) -> bool {
-    return DIGITS.contains(character);
+    DIGITS.contains(character)
 }
 
 fn read_number<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
@@ -132,48 +132,45 @@ fn read_number<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
             _ => break,
         }
     }
-    return num_str;
+    num_str
 }
 
 fn match_number(num_str: &str, line: u32, column: u32) -> Token {
     let position = Position::new(line, column);
     if num_str.contains('.') {
         let float_val: f64 = num_str.parse().unwrap();
-        return Token::new(num_str.to_string(), TokenType::Float(float_val), position);
+        Token::new(num_str.to_string(), TokenType::Float(float_val), position)
     } else {
         let int_val: i64 = num_str.parse().unwrap();
-        let token = Token::new(num_str.to_string(), TokenType::Int(int_val), position);
-        return token;
+        
+        Token::new(num_str.to_string(), TokenType::Int(int_val), position)
     }
 }
 
 fn read_multi_character_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
     let mut literal: String = chars.peek().unwrap().to_string();
 
-    match chars.next() {
-        Some('=') => {
-            literal.push('=');
-        }
-        _ => {}
+    if let Some('=') = chars.next() {
+        literal.push('=');
     };
-    return literal;
+    literal
 }
 
 fn match_multi_character_token(literal: &str, line: u32, column: u32) -> Token {
     match literal {
         "!=" => {
-            return Token {
+            Token {
                 token_type: TokenType::NotEqual,
                 literal: literal.to_owned(),
                 position: Position::new(line, column),
-            };
+            }
         }
         "==" => {
-            return Token {
+            Token {
                 token_type: TokenType::EqualEqual,
                 literal: literal.to_owned(),
                 position: Position::new(line, column),
-            };
+            }
         }
         _ => {
             panic!("Unexpected Character")
@@ -200,5 +197,5 @@ fn match_single_character_token(
         _ => return Err(InvalidTokenError),
     };
     let token = Token::new(character.to_string(), token_type, position);
-    return Ok(token);
+    Ok(token)
 }

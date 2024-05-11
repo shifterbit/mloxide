@@ -46,13 +46,13 @@ fn equality(lexer: &mut Lexer) -> AstNode {
         TokenType::EqualEqual | TokenType::NotEqual => {
             lexer.next();
             let right = equality(lexer);
-            return AstNode::Binary {
+            AstNode::Binary {
                 op: get_operator(token.token_type),
                 lhs: Box::new(expr),
                 rhs: Box::new(right),
-            };
+            }
         }
-        _ => return expr,
+        _ => expr,
     }
 }
 
@@ -63,13 +63,13 @@ fn term(lexer: &mut Lexer) -> AstNode {
         TokenType::Minus | TokenType::Plus => {
             lexer.next();
             let right = term(lexer);
-            return AstNode::Binary {
+            AstNode::Binary {
                 op: get_operator(token.token_type),
                 lhs: Box::new(expr),
                 rhs: Box::new(right),
-            };
+            }
         }
-        _ => return expr,
+        _ => expr,
     }
 }
 
@@ -80,13 +80,13 @@ fn factor(lexer: &mut Lexer) -> AstNode {
         TokenType::ForwardSlash | TokenType::Star => {
             let right = factor(lexer);
             lexer.next();
-            return AstNode::Binary {
+            AstNode::Binary {
                 op: get_operator(token.token_type),
                 lhs: Box::new(expr),
                 rhs: Box::new(right),
-            };
+            }
         }
-        _ => return expr,
+        _ => expr,
     }
 }
 
@@ -96,10 +96,10 @@ fn unary(lexer: &mut Lexer) -> AstNode {
         TokenType::Negation => {
             lexer.next();
             let expr = unary(lexer);
-            return AstNode::Unary {
+            AstNode::Unary {
                 op: get_operator(token.token_type),
                 expr: Box::new(expr),
-            };
+            }
         }
         _ => primary(lexer),
     }

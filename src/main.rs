@@ -19,7 +19,7 @@ fn main() {
     println!("Lexer:\n {:#?}", &lexer);
     let ast = parse(&mut lexer);
     println!("AST:\n {:#?}", ast);
-    let tast = typecheck(Box::new(ast));
+    let tast = typecheck(ast);
     println!("Typed AST:\n {:#?}", tast);
     let eval = eval_expression(tast);
     println!("Eval Result:\n {:#?}", eval);
