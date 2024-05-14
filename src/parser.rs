@@ -112,7 +112,15 @@ fn primary(lexer: &mut Lexer) -> AstNode {
         TokenType::Float(n) => AstNode::Float(n),
         TokenType::Bool(b) => AstNode::Bool(b),
         TokenType::Identifier(i) => AstNode::Identifier(i),
-        _ => panic!("Expected Literal Value"),
+        TokenType::LeftParen => {
+            let expr = expression(lexer);
+            if lexer.next().token_type == TokenType::RightParen {
+                AstNode::Grouping(Box::new(expr))
+            } else {
+                panic!("Expected ) after expression")
+            }
+        },
+        _ =>  panic!("Expected literal value")
     }
 }
 

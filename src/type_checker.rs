@@ -14,6 +14,10 @@ pub enum TypedAstNode {
     Float(f64),
     Bool(bool),
     Identifier(String),
+    Grouping {
+        expr: Box<TypedAstNode>,
+        node_type: Type,
+    },
     Binary {
         node_type: Type,
         op: Operator,
@@ -40,6 +44,7 @@ impl TypedAstNode {
             TypedAstNode::Float(_) => Type::Float,
             TypedAstNode::Bool(_) => Type::Bool,
             TypedAstNode::Identifier(_) => Type::Unknown,
+            TypedAstNode::Grouping { expr: _, node_type: t } => t.clone(),
             TypedAstNode::Unary {
                 node_type: t,
                 op: _,
@@ -62,6 +67,12 @@ pub fn typecheck(node: AstNode) -> TypedAstNode {
         AstNode::Float(n) => TypedAstNode::Float(n),
         AstNode::Bool(b) => TypedAstNode::Bool(b),
         AstNode::Identifier(i) => TypedAstNode::Identifier(i),
+        AstNode::Grouping(expr) => {
+            let typecheck = typecheck(*expr);
+            let typed_expr = typecheck;
+            let expr_type = typed_expr.get_type();
+            TypedAstNode::Grouping { expr: Box::new(typed_expr), node_type: expr_type }
+        },
         AstNode::Binary { op, lhs, rhs } => {
             let typed_lhs = typecheck(*lhs);
             let typed_rhs = typecheck(*rhs);

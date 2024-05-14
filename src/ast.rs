@@ -14,6 +14,7 @@ pub enum AstNode {
     Float(f64),
     Bool(bool),
     Identifier(String),
+    Grouping(Box<AstNode>),
     Binary {
         op: Operator,
         lhs: Box<AstNode>,

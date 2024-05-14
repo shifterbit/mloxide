@@ -16,7 +16,6 @@ fn main() {
     let text = fs::read_to_string(path);
     println!("Plaintext:\n {:#?}", &text);
     let mut lexer = lexer::Lexer::new(&text.unwrap());
-    println!("Lexer:\n {:#?}", &lexer);
     let ast = parse(&mut lexer);
     println!("AST:\n {:#?}", ast);
     let tast = typecheck(ast);

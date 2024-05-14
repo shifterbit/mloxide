@@ -13,6 +13,7 @@ pub fn eval_expression(ast: TypedAstNode) -> Value {
         TypedAstNode::Float(n) => Value::Float(n),
         TypedAstNode::Bool(b) => Value::Bool(b),
         TypedAstNode::Identifier(_i) => todo!(),
+        TypedAstNode::Grouping { expr, node_type: _ } => eval_expression(*expr),
         TypedAstNode::Binary {
             node_type: _,
             op,
