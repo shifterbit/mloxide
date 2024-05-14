@@ -23,7 +23,7 @@ fn main() {
             let tast = typecheck(a);
             println!("Typed AST:\n {:#?}", tast);
             let eval = eval_expression(tast);
-            println!("Eval Result:\n {:#?}", eval);
+            println!("{}", eval);
         }
         Err(e) => {
             let errors = stringify_parse_errors(e);

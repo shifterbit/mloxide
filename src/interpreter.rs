@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 use crate::{ast::Operator, type_checker::TypedAstNode};
 
 #[derive(Debug)]
@@ -5,6 +7,16 @@ pub enum Value {
     Int(i64),
     Float(f64),
     Bool(bool),
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::Bool(b) => write!(f, "{}", b),
+            Value::Int(n) => write!(f, "{}", n),
+            Value::Float(n) => write!(f, "{}", n),
+        }
+    }
 }
 
 pub fn eval_expression(ast: TypedAstNode) -> Value {
@@ -19,26 +31,32 @@ pub fn eval_expression(ast: TypedAstNode) -> Value {
             op,
             lhs,
             rhs,
-        } => {
-            eval_binary(op, *lhs, *rhs)
-        },
+        } => eval_binary(op, *lhs, *rhs),
         TypedAstNode::Unary {
             node_type: _,
             op,
             expr,
         } => eval_unary(op, *expr),
-        TypedAstNode::If { node_type: _, condition, if_body, else_body } => eval_if_expression(*condition, *if_body, *else_body),
+        TypedAstNode::If {
+            node_type: _,
+            condition,
+            if_body,
+            else_body,
+        } => eval_if_expression(*condition, *if_body, *else_body),
     }
 }
 
-fn eval_if_expression(condition: TypedAstNode, if_body: TypedAstNode, else_body:TypedAstNode) -> Value {
+fn eval_if_expression(
+    condition: TypedAstNode,
+    if_body: TypedAstNode,
+    else_body: TypedAstNode,
+) -> Value {
     let condition = eval_expression(condition);
     match condition {
         Value::Bool(true) => eval_expression(if_body),
         Value::Bool(false) => eval_expression(else_body),
-        _ => panic!("Expected Boolean Value for condition")
+        _ => panic!("Expected Boolean Value for condition"),
     }
-    
 }
 
 fn eval_binary(op: Operator, left: TypedAstNode, right: TypedAstNode) -> Value {
