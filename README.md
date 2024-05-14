@@ -16,7 +16,7 @@ cargo build
 ```
 ### If Expressions
 ```sml
-if 2 + 2 == 4 
+if (2 + 2) == 4 
 then 2 
 else 9
 ```
@@ -28,10 +28,16 @@ else 9
 - [ ] Lists
 - [x] Arithmetic Expressions
 - [x] Equality Expressions
+- [x] Grouping Expressions
 - [ ] Comparison
 - [x] If Expressions
 - [ ] Assignment
 - [ ] Pattern Matching
 - [x] Type Checking
 - [ ] Proper Error Handling and Reporting
+  - [ ] Syntax Errors
+	- [x] Error Reporting
+	- [ ] Error Recovery
+  - [ ] Type Errors
+    - [ ] Error Reporting
 - [ ] Module System/Imports
