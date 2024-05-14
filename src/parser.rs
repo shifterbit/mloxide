@@ -218,7 +218,7 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, P
             } else {
                 let error = ParseError::new("Expected closing parenthesis", lexer.peek());
                 errors.push(error);
-                return Err(errors.clone())
+                Err(errors.clone())
             }
         }
         _ => panic!("Expected literal value"),
