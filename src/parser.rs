@@ -78,8 +78,8 @@ fn factor(lexer: &mut Lexer) -> AstNode {
     let token = lexer.peek();
     match token.token_type {
         TokenType::ForwardSlash | TokenType::Star => {
-            let right = factor(lexer);
             lexer.next();
+            let right = factor(lexer);
             AstNode::Binary {
                 op: get_operator(token.token_type),
                 lhs: Box::new(expr),
