@@ -62,8 +62,11 @@ pub enum TokenType {
     Then,
     Else,
 
+    // Declarations
+    Val,
+
     // EOF
-    Eof,
+    Eof
 }
 
 impl Display for TokenType {
@@ -85,6 +88,7 @@ impl Display for TokenType {
             TokenType::If => write!(f, "If"),
             TokenType::Then => write!(f, "Then"),
             TokenType::Else => write!(f, "Else"),
+            TokenType::Val => write!(f, "Val"),
             TokenType::Identifier(i) => write!(f, "Identifier({})", i),
             
         }
