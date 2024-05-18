@@ -125,7 +125,8 @@ pub fn typecheck(node: AstNode) -> TypedAstNode {
                 if_body: Box::new(if_body_typed),
                 else_body: Box::new(else_body_typed),
             }
-        }
+        },
+        AstNode::VariableDeclaration { variable, value } => todo!()
     }
 }
 

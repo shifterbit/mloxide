@@ -15,6 +15,10 @@ pub enum AstNode {
     Bool(bool),
     Identifier(String),
     Grouping(Box<AstNode>),
+    VariableDeclaration {
+        variable: String,
+        value: Box<AstNode>
+    },
     Binary {
         op: Operator,
         lhs: Box<AstNode>,

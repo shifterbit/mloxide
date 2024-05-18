@@ -20,10 +20,10 @@ fn main() {
     match ast {
         Ok(a) => {
             println!("AST:\n {:#?}", a);
-            let tast = typecheck(a);
-            println!("Typed AST:\n {:#?}", tast);
-            let eval = eval_expression(tast);
-            println!("{}", eval);
+            // let tast = typecheck(a);
+            // println!("Typed AST:\n {:#?}", tast);
+            // let eval = eval_expression(tast);
+            // println!("{}", eval);
         }
         Err(e) => {
             let errors = stringify_parse_errors(e);

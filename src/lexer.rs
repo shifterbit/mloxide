@@ -36,7 +36,7 @@ impl Lexer {
                     column += length;
                     chars.next();
                 }
-                '(' | ')' | '+' | '-' | '*' | '/' | '~' => {
+                '(' | ')' | '+' | '-' | '*' | '/' | '~' | ';'=> {
                     let token = match_single_character_token(*character, line, column);
                     tokens.push(token.unwrap());
                     column += 1;
@@ -172,6 +172,13 @@ fn match_multi_character_token(literal: &str, line: u32, column: u32) -> Token {
                 literal: literal.to_owned(),
                 position: Position::new(line, column),
             }
+        },
+        "=" => {
+            Token {
+                token_type: TokenType::Equal,
+                literal: literal.to_owned(),
+                position: Position::new(line, column)
+            }
         }
         _ => {
             panic!("Unexpected Character")
@@ -195,6 +202,7 @@ fn match_single_character_token(
         '*' => TokenType::Star,
         '/' => TokenType::ForwardSlash,
         '~' => TokenType::Negation,
+        ';' => TokenType::Semicolon,
         _ => return Err(InvalidTokenError),
     };
     let token = Token::new(character.to_string(), token_type, position);
