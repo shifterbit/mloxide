@@ -1,10 +1,14 @@
-use crate::ast::{AstNode, Operator};
+use crate::{
+    ast::{AstNode, Operator},
+    name_resolution::SymbolTable,
+};
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Type {
     Int,
     Float,
     Bool,
+    Declarations(Vec<Type>),
     Unknown,
 }
 
@@ -13,18 +17,24 @@ pub enum TypedAstNode {
     Int(i64),
     Float(f64),
     Bool(bool),
-    Identifier(String),
+    Identifier {
+        name: String,
+        node_type: Type,
+    },
     Grouping {
         expr: Box<TypedAstNode>,
         node_type: Type,
     },
-    Declarations(Vec<TypedAstNode>),     
+    Declarations {
+        declarations: Vec<TypedAstNode>,
+        node_type: Type,
+    },
     VariableDeclaration {
         variable: String,
         value: Box<TypedAstNode>,
-        node_type: Type
+        node_type: Type,
     },
-    
+
     Binary {
         node_type: Type,
         op: Operator,
@@ -50,10 +60,23 @@ impl TypedAstNode {
             TypedAstNode::Int(_) => Type::Int,
             TypedAstNode::Float(_) => Type::Float,
             TypedAstNode::Bool(_) => Type::Bool,
-            TypedAstNode::Identifier(_) => Type::Unknown,
-            TypedAstNode::VariableDeclaration { variable, value, node_type } => todo!(),
-            TypedAstNode::Declarations(_) => todo!(),
-            TypedAstNode::Grouping { expr: _, node_type: t } => t.clone(),
+            TypedAstNode::Identifier {
+                name: _,
+                node_type: t,
+            } => t.clone(),
+            TypedAstNode::VariableDeclaration {
+                variable,
+                value,
+                node_type: t,
+            } => t.clone(),
+            TypedAstNode::Declarations {
+                declarations,
+                node_type: t,
+            } => t.clone(),
+            TypedAstNode::Grouping {
+                expr: _,
+                node_type: t,
+            } => t.clone(),
             TypedAstNode::Unary {
                 node_type: t,
                 op: _,
@@ -65,27 +88,52 @@ impl TypedAstNode {
                 lhs: _,
                 rhs: _,
             } => t.clone(),
-            TypedAstNode::If { node_type: t, condition: _, if_body: _, else_body: _ } => t.clone()
+            TypedAstNode::If {
+                node_type: t,
+                condition: _,
+                if_body: _,
+                else_body: _,
+            } => t.clone(),
         }
-        
     }
 }
 
-pub fn typecheck(node: AstNode) -> TypedAstNode {
+pub fn typecheck(
+    node: AstNode,
+    symbol_table: &SymbolTable<AstNode>,
+    type_table: &mut SymbolTable<Type>,
+) -> TypedAstNode {
     match node {
         AstNode::Int(n) => TypedAstNode::Int(n),
         AstNode::Float(n) => TypedAstNode::Float(n),
         AstNode::Bool(b) => TypedAstNode::Bool(b),
-        AstNode::Identifier(i) => TypedAstNode::Identifier(i),
+        AstNode::Identifier(i) => match &symbol_table.lookup(&i) {
+            Some(exp) => {
+                let typed_expr = typecheck(exp.clone(), &symbol_table, type_table);
+                let expr_type = typed_expr.get_type();
+                type_table.insert(&i, expr_type.clone());
+                TypedAstNode::Identifier {
+                    name: i,
+                    node_type: expr_type,
+                }
+            }
+            None => TypedAstNode::Identifier {
+                name: i,
+                node_type: Type::Unknown,
+            },
+        },
         AstNode::Grouping(expr) => {
-            let typecheck = typecheck(*expr);
+            let typecheck = typecheck(*expr, symbol_table, type_table);
             let typed_expr = typecheck;
             let expr_type = typed_expr.get_type();
-            TypedAstNode::Grouping { expr: Box::new(typed_expr), node_type: expr_type }
-        },
+            TypedAstNode::Grouping {
+                expr: Box::new(typed_expr),
+                node_type: expr_type,
+            }
+        }
         AstNode::Binary { op, lhs, rhs } => {
-            let typed_lhs = typecheck(*lhs);
-            let typed_rhs = typecheck(*rhs);
+            let typed_lhs = typecheck(*lhs, symbol_table, type_table);
+            let typed_rhs = typecheck(*rhs, symbol_table, type_table);
             let l_type = typed_lhs.get_type();
             let r_type = typed_rhs.get_type();
             let (l_expected, r_expected) = allowed_binary_op_type(op, l_type.clone());
@@ -104,7 +152,7 @@ pub fn typecheck(node: AstNode) -> TypedAstNode {
             }
         }
         AstNode::Unary { op, expr } => {
-            let typed_expr = typecheck(*expr);
+            let typed_expr = typecheck(*expr, symbol_table, type_table);
             let e_type = typed_expr.get_type();
             let expected_type = allowed_infix_op_type(op, e_type.clone());
             TypedAstNode::Unary {
@@ -118,9 +166,9 @@ pub fn typecheck(node: AstNode) -> TypedAstNode {
             if_body,
             else_body,
         } => {
-            let condition_typed = typecheck(*condition);
-            let if_body_typed = typecheck(*if_body);
-            let else_body_typed = typecheck(*else_body);
+            let condition_typed = typecheck(*condition, symbol_table, type_table);
+            let if_body_typed = typecheck(*if_body, symbol_table, type_table);
+            let else_body_typed = typecheck(*else_body, symbol_table, type_table);
 
             let full_type = if if_body_typed.get_type() == else_body_typed.get_type() {
                 if_body_typed.get_type()
@@ -128,16 +176,37 @@ pub fn typecheck(node: AstNode) -> TypedAstNode {
                 Type::Unknown
             };
 
-
             TypedAstNode::If {
                 node_type: full_type,
                 condition: Box::new(condition_typed),
                 if_body: Box::new(if_body_typed),
                 else_body: Box::new(else_body_typed),
             }
-        },
-        AstNode::VariableDeclaration { variable, value } => todo!(),
-        AstNode::Declarations(_) => todo!()
+        }
+        AstNode::VariableDeclaration { variable, value } => {
+            let val_node = typecheck(*value.clone(), symbol_table, type_table);
+            let val_type = val_node.get_type();
+            TypedAstNode::VariableDeclaration {
+                variable,
+                value: Box::new(val_node),
+                node_type: val_type,
+            }
+        }
+        AstNode::Declarations(nodes) => {
+            let mut declarations: Vec<TypedAstNode> = Vec::new();
+            for node in nodes {
+                declarations.push(typecheck(node, symbol_table, type_table));
+            }
+            let node_types: Vec<Type> = declarations
+                .clone()
+                .into_iter()
+                .map(|x| x.get_type())
+                .collect();
+            TypedAstNode::Declarations {
+                declarations,
+                node_type: Type::Declarations(node_types),
+            }
+        }
     }
 }
 
