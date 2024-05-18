@@ -39,8 +39,20 @@ impl Display for ParseError {
 pub fn parse(lexer: &mut Lexer) -> Result<AstNode, Vec<ParseError>> {
     //      parse_expr(lexer, 0)
     let mut errors: Vec<ParseError> = Vec::new();
-    variable_declaration(lexer, &mut errors)
+    declaration(lexer, &mut errors)
 }
+
+fn recover_from_error(lexer: &mut Lexer) {
+    while lexer.peek().token_type != TokenType::Eof {
+        match lexer.peek().token_type {
+            TokenType::Val => return,
+            _ => {
+                lexer.next();
+            }
+        }
+    }
+}
+
 fn expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
     let curr = lexer.peek();
     let token_type = curr.token_type;
@@ -51,7 +63,49 @@ fn expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode
     }
 }
 
-fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
+fn declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
+    let mut declarations: Vec<AstNode> = Vec::new();
+    let mut found_error = false;
+    while lexer.peek().token_type != TokenType::Eof {
+        match lexer.peek().token_type {
+            TokenType::Val => {
+                let declaration = variable_declaration(lexer, errors);
+                match declaration {
+                    Ok(node) => {
+                        declarations.push(node);
+                    }
+                    Err(_) => {
+                        recover_from_error(lexer);
+                        found_error = true;
+                    }
+                }
+            }
+            _ => {
+                let expr = expression(lexer, errors);
+                match expr {
+                    Ok(node) => {
+                        declarations.push(node);
+                    }
+                    Err(_) => {
+                        recover_from_error(lexer);
+                        found_error = true;
+                    }
+                }
+            }
+        }
+    }
+    if found_error {
+        Err(errors.to_vec())
+    } else {
+        Ok(AstNode::Declarations(declarations))
+        
+    }
+}
+
+fn variable_declaration(
+    lexer: &mut Lexer,
+    errors: &mut Vec<ParseError>,
+) -> Result<AstNode, ParseErrorList> {
     let val_tok = lexer.next();
     if val_tok.token_type != TokenType::Val {
         println!("{}", val_tok);
@@ -60,18 +114,15 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Resu
         return Err(errors.clone());
     }
     let eq_tok = lexer.next();
-    let variable_name: String;
-    match eq_tok.token_type {
-        TokenType::Identifier(name) => {
-            variable_name = name;
-        }
+    let variable_name = match eq_tok.token_type {
+        TokenType::Identifier(name) => name,
         _ => {
             let error_val = ParseError::new("expected '=' after val", eq_tok);
             errors.push(error_val);
             return Err(errors.clone());
         }
-    }
-    
+    };
+
     lexer.next();
     let assigned_expr = expression(lexer, errors);
     let semicolon_tok = lexer.next();
@@ -79,14 +130,14 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Resu
         let error_val = ParseError::new("expected ';' after variable declaration", semicolon_tok);
         errors.push(error_val);
         return Err(errors.clone());
-        
     }
     match assigned_expr {
-        Ok(expr) => Ok(AstNode::VariableDeclaration { variable: variable_name, value: Box::new(expr) }),
-        err => err
+        Ok(expr) => Ok(AstNode::VariableDeclaration {
+            variable: variable_name,
+            value: Box::new(expr),
+        }),
+        err => err,
     }
-
-    
 }
 
 fn if_expression(

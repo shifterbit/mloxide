@@ -1,8 +1,8 @@
-use std::fmt::{self, Display};
+use std::{clone, fmt::{self, Display}};
 
 use crate::{ast::Operator, type_checker::TypedAstNode};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Int(i64),
     Float(f64),
@@ -43,6 +43,8 @@ pub fn eval_expression(ast: TypedAstNode) -> Value {
             if_body,
             else_body,
         } => eval_if_expression(*condition, *if_body, *else_body),
+        TypedAstNode::VariableDeclaration { variable, value, node_type } => todo!(),
+        TypedAstNode::Declarations(_) => todo!()
     }
 }
 

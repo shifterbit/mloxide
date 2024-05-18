@@ -2,13 +2,16 @@ use std::{env, fs};
 
 use parser::parse;
 
-use crate::{interpreter::eval_expression, parser::stringify_parse_errors, type_checker::typecheck};
+use crate::{
+    interpreter::eval_expression, name_resolution::{resolve_symbols, SymbolTable}, parser::stringify_parse_errors, type_checker::typecheck
+};
 mod ast;
 mod interpreter;
 mod lexer;
 mod parser;
 mod token;
 mod type_checker;
+mod name_resolution;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -20,6 +23,9 @@ fn main() {
     match ast {
         Ok(a) => {
             println!("AST:\n {:#?}", a);
+            let mut symtable = SymbolTable::new();
+            resolve_symbols(a, &mut symtable);
+            println!("SymbolTable:\n {:#?}", symtable);
             // let tast = typecheck(a);
             // println!("Typed AST:\n {:#?}", tast);
             // let eval = eval_expression(tast);
@@ -32,5 +38,4 @@ fn main() {
             }
         }
     }
-
 }

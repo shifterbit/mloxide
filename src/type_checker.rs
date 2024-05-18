@@ -18,6 +18,13 @@ pub enum TypedAstNode {
         expr: Box<TypedAstNode>,
         node_type: Type,
     },
+    Declarations(Vec<TypedAstNode>),     
+    VariableDeclaration {
+        variable: String,
+        value: Box<TypedAstNode>,
+        node_type: Type
+    },
+    
     Binary {
         node_type: Type,
         op: Operator,
@@ -44,6 +51,8 @@ impl TypedAstNode {
             TypedAstNode::Float(_) => Type::Float,
             TypedAstNode::Bool(_) => Type::Bool,
             TypedAstNode::Identifier(_) => Type::Unknown,
+            TypedAstNode::VariableDeclaration { variable, value, node_type } => todo!(),
+            TypedAstNode::Declarations(_) => todo!(),
             TypedAstNode::Grouping { expr: _, node_type: t } => t.clone(),
             TypedAstNode::Unary {
                 node_type: t,
@@ -58,6 +67,7 @@ impl TypedAstNode {
             } => t.clone(),
             TypedAstNode::If { node_type: t, condition: _, if_body: _, else_body: _ } => t.clone()
         }
+        
     }
 }
 
@@ -126,7 +136,8 @@ pub fn typecheck(node: AstNode) -> TypedAstNode {
                 else_body: Box::new(else_body_typed),
             }
         },
-        AstNode::VariableDeclaration { variable, value } => todo!()
+        AstNode::VariableDeclaration { variable, value } => todo!(),
+        AstNode::Declarations(_) => todo!()
     }
 }
 
