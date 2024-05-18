@@ -1,5 +1,6 @@
-<program> ::= <declaration> "\;" | <program> | <program> <program>
-<declaration> ::= <val_declaration>
+<program> ::= <declaration> "\;" | <expression> | <program> | <program> <program>
+
+<declaration> ::= <val_declaration> 
 <expression> ::= <equality> | <if_expression>
 <val_declaration> ::= "val" <wp> "=" <expression> 
 <if_expression> ::= "if" <wp> <expression> <wp> "then" <wp> <expression> <wp> "else" <wp> <expression>
