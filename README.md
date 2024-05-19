@@ -21,7 +21,7 @@ then 2
 else 9
 ```
 
-## TODO
+## Features
 - [x] Ints
 - [x] Booleans
 - [ ] Strings
@@ -31,7 +31,9 @@ else 9
 - [x] Grouping Expressions
 - [ ] Comparison
 - [x] If Expressions
-- [ ] Assignment
+- [x] Assignment
+  - [x] Global Variables
+  - [ ] Local Variables 
 - [ ] Pattern Matching
 - [x] Type Checking
 - [ ] Proper Error Handling and Reporting
