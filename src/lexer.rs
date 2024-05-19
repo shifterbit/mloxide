@@ -1,9 +1,10 @@
 use crate::token::{Token, TokenType};
-use std::{iter::Peekable};
+use std::iter::Peekable;
 
 #[derive(Debug)]
 pub struct Lexer {
     tokens: Vec<Token>,
+    position: usize,
     eof_token: Token,
 }
 
@@ -14,7 +15,7 @@ impl Lexer {
         let mut chars = text.chars().peekable();
         while let Some(character) = chars.peek() {
             match character {
-                '\n' | ' ' | '\t'=> {
+                '\n' | ' ' | '\t' => {
                     offset += 1;
                     chars.next();
                     if chars.peek().is_none() {
@@ -68,25 +69,30 @@ impl Lexer {
             literal: "".to_string(),
             offset: (offset - 1),
         };
-        tokens.reverse();
         Lexer {
             tokens,
             eof_token,
+            position: 0,
         }
     }
     pub fn peek(&self) -> Token {
-        let token = self
-            .tokens
-            .last()
-            .cloned()
-            .unwrap_or_else(|| self.eof_token.clone());
-        token
+        if self.position < self.tokens.len() {
+            self.tokens[self.position].clone()
+        } else {
+            self.eof_token.clone()
+        }
+    }
+    pub fn previous(&self) -> Token {
+        self.tokens[self.position - 1].clone()
     }
     pub fn next(&mut self) -> Token {
-        self.tokens.pop().unwrap_or_else(|| self.eof_token.clone())
-            
-
-
+        if self.position < self.tokens.len() {
+            let tok = self.tokens[self.position].clone();
+            self.position += 1;
+            tok
+        } else {
+            self.eof_token.clone()
+        }
     }
 }
 
