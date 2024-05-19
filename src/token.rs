@@ -4,7 +4,7 @@ use std::fmt::{self, Display};
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
-    pub position: Position,
+    pub offset: usize,
 }
 
 impl Default for Token {
@@ -12,7 +12,7 @@ impl Default for Token {
         Token {
             literal: "".to_string(),
             token_type: TokenType::Eof,
-            position: Position::new(0, 0),
+            offset: 0,
         }
     }
 }
@@ -22,17 +22,17 @@ impl Display for Token {
         write!(
             f,
             "\"{}\" {} {}",
-            self.literal, self.token_type, self.position
+            self.literal, self.token_type, self.offset
         )
     }
 }
 
 impl Token {
-    pub fn new(literal: String, token_type: TokenType, position: Position) -> Token {
+    pub fn new(literal: String, token_type: TokenType, offset: usize) -> Token {
         Token {
             literal,
             token_type,
-            position,
+            offset,
         }
     }
 }
@@ -101,23 +101,3 @@ impl Display for TokenType {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Position {
-    line: u32,
-    column: u32,
-}
-
-impl Display for Position {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}:{}", self.line, self.column)
-    }
-}
-
-impl Position {
-    pub fn new(line: u32, start_column: u32) -> Position {
-        Position {
-            line,
-            column: start_column,
-        }
-    }
-}
