@@ -47,6 +47,10 @@ pub enum TokenType {
     Star,
     ForwardSlash,
     Negation,
+    Equal,
+    Semicolon,
+    
+    // Multi Character Tokens
     EqualEqual,
     NotEqual,
     // Values
@@ -62,8 +66,11 @@ pub enum TokenType {
     Then,
     Else,
 
+    // Declarations
+    Val,
+
     // EOF
-    Eof,
+    Eof
 }
 
 impl Display for TokenType {
@@ -79,12 +86,15 @@ impl Display for TokenType {
             TokenType::Float(n) => write!(f, "Float({})", n),
             TokenType::Int(n) => write!(f, "Int({})", n),
             TokenType::Eof => write!(f, "EOF"),
+            TokenType::Equal => write!(f, "Equal"),
             TokenType::EqualEqual => write!(f, "EqualEqual"),
             TokenType::NotEqual => write!(f, "NotEqual"),
             TokenType::Bool(b) => write!(f, "Bool({})", b),
+            TokenType::Semicolon => write!(f, "Semicolon"),
             TokenType::If => write!(f, "If"),
             TokenType::Then => write!(f, "Then"),
             TokenType::Else => write!(f, "Else"),
+            TokenType::Val => write!(f, "Val"),
             TokenType::Identifier(i) => write!(f, "Identifier({})", i),
             
         }

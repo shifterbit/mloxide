@@ -35,9 +35,9 @@ else 9
 - [ ] Pattern Matching
 - [x] Type Checking
 - [ ] Proper Error Handling and Reporting
-  - [ ] Syntax Errors
+  - [x] Syntax Errors
 	- [x] Error Reporting
-	- [ ] Error Recovery
+	- [x] Error Recovery
   - [ ] Type Errors
     - [ ] Error Reporting
 - [ ] Module System/Imports

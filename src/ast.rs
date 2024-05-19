@@ -6,15 +6,20 @@ pub enum Operator {
     Divide,
     Multiply,
     Equal,
-    NotEqual
+    NotEqual,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AstNode {
     Int(i64),
     Float(f64),
     Bool(bool),
     Identifier(String),
     Grouping(Box<AstNode>),
+    Declarations(Vec<AstNode>),
+    VariableDeclaration {
+        variable: String,
+        value: Box<AstNode>,
+    },
     Binary {
         op: Operator,
         lhs: Box<AstNode>,
@@ -27,6 +32,6 @@ pub enum AstNode {
     If {
         condition: Box<AstNode>,
         if_body: Box<AstNode>,
-        else_body: Box<AstNode>
-    }
+        else_body: Box<AstNode>,
+    },
 }
