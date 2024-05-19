@@ -65,12 +65,12 @@ impl TypedAstNode {
                 node_type: t,
             } => t.clone(),
             TypedAstNode::VariableDeclaration {
-                variable,
-                value,
+                variable: _,
+                value: _,
                 node_type: t,
             } => t.clone(),
             TypedAstNode::Declarations {
-                declarations,
+                declarations: _,
                 node_type: t,
             } => t.clone(),
             TypedAstNode::Grouping {
@@ -109,7 +109,7 @@ pub fn typecheck(
         AstNode::Bool(b) => TypedAstNode::Bool(b),
         AstNode::Identifier(i) => match &symbol_table.lookup(&i) {
             Some(exp) => {
-                let typed_expr = typecheck(exp.clone(), &symbol_table, type_table);
+                let typed_expr = typecheck(exp.clone(), symbol_table, type_table);
                 let expr_type = typed_expr.get_type();
                 type_table.insert(&i, expr_type.clone());
                 TypedAstNode::Identifier {

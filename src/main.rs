@@ -4,7 +4,7 @@ use parser::parse;
 
 use crate::{
     ast::AstNode,
-    interpreter::eval_expression,
+    interpreter::{eval_expression, Value},
     name_resolution::{resolve_symbols, SymbolTable},
     parser::stringify_parse_errors,
     type_checker::{typecheck, Type},
@@ -33,8 +33,9 @@ fn main() {
             let mut type_table: SymbolTable<Type> = SymbolTable::new();
             let tast = typecheck(a.clone(), &symtable, &mut type_table);
             println!("Typed AST:\n {:#?}", tast);
-            // let eval = eval_expression(tast);
-            // println!("{}", eval);
+            let mut value_table: SymbolTable<Value> = SymbolTable::new();
+            let eval = eval_expression(tast, &mut value_table);
+            println!("{:?}", eval);
         }
         Err(e) => {
             let errors = stringify_parse_errors(e);
