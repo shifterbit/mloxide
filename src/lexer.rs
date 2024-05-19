@@ -18,18 +18,13 @@ impl Lexer {
                 '\n' | ' ' | '\t' => {
                     offset += 1;
                     chars.next();
-                    if chars.peek().is_none() {
-                        offset -= 1;
-                    }
                 }
                 '=' | '!' => {
-                    offset += 1;
                     let literal = read_multi_character_token(&mut chars);
                     let length = literal.len();
                     let token = match_multi_character_token(&literal, offset);
                     tokens.push(token.clone());
                     offset += length;
-                    chars.next();
                 }
                 '(' | ')' | '+' | '-' | '*' | '/' | '~' | ';' => {
                     let token = match_single_character_token(*character, offset);
@@ -38,7 +33,6 @@ impl Lexer {
                     chars.next();
                 }
                 _c if is_digit(character) => {
-                    offset += 1;
                     let literal = read_number(&mut chars);
                     let length = literal.len();
                     let token = match_number(&literal, offset);
