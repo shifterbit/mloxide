@@ -36,10 +36,10 @@ else 9
   - [ ] Local Variables 
 - [ ] Pattern Matching
 - [x] Type Checking
-- [ ] Proper Error Handling and Reporting
+- [x] Proper Error Handling and Reporting
   - [x] Syntax Errors
 	- [x] Error Reporting
 	- [x] Error Recovery
-  - [ ] Type Errors
-    - [ ] Error Reporting
+  - [x] Type Errors
+    - [x] Error Reporting
 - [ ] Module System/Imports
