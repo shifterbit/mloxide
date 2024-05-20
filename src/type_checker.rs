@@ -138,7 +138,7 @@ pub fn typecheck(
                 }
                 types_str = types_str.trim().trim_end_matches(',').to_string();
                 let error = TypeError::new(
-                    &format!("value of type {e_type} cannot be used with operator {op}"),
+                    &format!("value of type {e_type} cannot be used with operator {op}, expected one of: {types_str}"),
                     location,
                 );
                 errors.push(error);
