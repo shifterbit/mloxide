@@ -27,7 +27,7 @@ impl CompilerError for ParseError {
         &self.message
     }
     fn error_type(&self) -> &str {
-        "ParseError"
+        "SyntaxError"
     }
 }
 
