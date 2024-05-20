@@ -1,6 +1,6 @@
 use crate::ast::{AstNode, Operator};
 use crate::lexer::Lexer;
-use crate::source_location::Sourcelocation;
+use crate::source_location::{SourceLocation, SourcePosition};
 use crate::token::{Token, TokenType};
 use std::fmt::{self, Display};
 
@@ -9,7 +9,7 @@ pub type ParseErrorList = Vec<ParseError>;
 #[derive(Debug, Clone)]
 pub struct ParseError {
     message: String,
-    pub location: Sourcelocation,
+    pub location: SourceLocation,
 }
 
 impl ParseError {
@@ -17,9 +17,10 @@ impl ParseError {
         let start = token.offset;
         let end = start + token.literal.len();
 
+        let location = SourceLocation::new(start, end);
         ParseError {
             message: message.to_string(),
-            location: Sourcelocation::new(start, end),
+            location,
         }
     }
 }

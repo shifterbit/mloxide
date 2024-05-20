@@ -1,5 +1,7 @@
 use std::fmt::{self, Display};
 
+use crate::source_location::{SourceLocation, SourcePosition};
+
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
@@ -37,6 +39,16 @@ impl Token {
     }
 }
 
+impl SourcePosition for Token {
+    fn source_location(&self) -> SourceLocation {
+        let token = self;
+        let literal = token.literal;
+        let start = token.offset;
+        let end = start + literal.len();
+        SourceLocation::new(start, end)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
     // Single Character Token
@@ -49,7 +61,7 @@ pub enum TokenType {
     Negation,
     Equal,
     Semicolon,
-    
+
     // Multi Character Tokens
     EqualEqual,
     NotEqual,
@@ -70,7 +82,7 @@ pub enum TokenType {
     Val,
 
     // EOF
-    Eof
+    Eof,
 }
 
 impl Display for TokenType {
@@ -96,8 +108,6 @@ impl Display for TokenType {
             TokenType::Else => write!(f, "Else"),
             TokenType::Val => write!(f, "Val"),
             TokenType::Identifier(i) => write!(f, "Identifier({})", i),
-            
         }
     }
 }
-

@@ -1,11 +1,16 @@
+
 #[derive(Debug, Clone, Copy)]
-pub struct Sourcelocation {
+pub struct SourceLocation {
     pub start: usize,
     pub end: usize
 }
 
-impl Sourcelocation {
-    pub fn new( start: usize, end: usize) -> Sourcelocation {
-        Sourcelocation { start, end }
+impl SourceLocation {
+    pub fn new( start: usize, end: usize) -> SourceLocation {
+        SourceLocation { start, end }
     }
+}
+
+pub trait SourcePosition {
+    fn source_location(&self) -> SourceLocation;
 }
