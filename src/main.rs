@@ -3,16 +3,21 @@ use std::{env, fs};
 use parser::parse;
 
 use crate::{
-    ast::AstNode, error_reporting::errors_from_file, interpreter::{eval_expression, Value}, name_resolution::{resolve_symbols, SymbolTable}, parser::stringify_parse_errors, type_checker::{typecheck, Type}
+    ast::{AstNode, Type, TypedAstNode},
+    error_reporting::errors_from_file,
+    interpreter::{eval_expression, Value},
+    name_resolution::{resolve_symbols, SymbolTable},
+    parser::stringify_parse_errors,
+    type_checker::typecheck,
 };
 mod ast;
+mod error_reporting;
 mod interpreter;
 mod lexer;
 mod name_resolution;
 mod parser;
 mod token;
 mod type_checker;
-mod error_reporting;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
