@@ -3,7 +3,7 @@ use std::{env, fs};
 use parser::parse;
 
 use crate::{
-    ast::{AstNode, Type, TypedAstNode},
+    ast::{AstNode, Type},
     error_reporting::errors_from_file,
     interpreter::{eval_expression, Value},
     name_resolution::{resolve_symbols, SymbolTable},
