@@ -75,7 +75,7 @@ impl SourcePosition for AstNode {
                 if_body: _,
                 else_body: _,
                 location,
-            } => location.clone(),
+            } => *location,
         }
     }
 }
@@ -195,51 +195,51 @@ impl TypedAstNode {
 impl SourcePosition for TypedAstNode {
     fn source_location(&self) -> SourceLocation {
         match self {
-            TypedAstNode::Error(location) => location.clone(),
-            TypedAstNode::Int(_, location) => location.clone(),
-            TypedAstNode::Float(_, location) => location.clone(),
-            TypedAstNode::Bool(_, location) => location.clone(),
+            TypedAstNode::Error(location) => *location,
+            TypedAstNode::Int(_, location) => *location,
+            TypedAstNode::Float(_, location) => *location,
+            TypedAstNode::Bool(_, location) => *location,
             TypedAstNode::Identifier {
                 name: _,
                 node_type: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedAstNode::Grouping {
                 expr: _,
                 node_type: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedAstNode::Declarations {
                 node_type: _,
                 declarations: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedAstNode::VariableDeclaration {
                 node_type: _,
                 variable: _,
                 value: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedAstNode::Binary {
                 node_type: _,
                 op: _,
                 lhs: _,
                 rhs: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedAstNode::Unary {
                 node_type: _,
                 op: _,
                 expr: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedAstNode::If {
                 node_type: _,
                 condition: _,
                 if_body: _,
                 else_body: _,
                 location,
-            } => location.clone(),
+            } => *location,
         }
     }
 }
