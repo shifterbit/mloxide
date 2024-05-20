@@ -171,6 +171,7 @@ fn read_multi_character_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>)
 
     if let Some('=') = chars.peek() {
         literal.push('=');
+        chars.next();
     };
     literal
 }
