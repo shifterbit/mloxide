@@ -7,7 +7,6 @@ use crate::{
     error_reporting::errors_from_file,
     interpreter::{eval_expression, Value},
     name_resolution::{resolve_symbols, SymbolTable},
-    parser::stringify_parse_errors,
     type_checker::typecheck,
 };
 mod ast;
@@ -16,6 +15,7 @@ mod interpreter;
 mod lexer;
 mod name_resolution;
 mod parser;
+mod source_location;
 mod token;
 mod type_checker;
 

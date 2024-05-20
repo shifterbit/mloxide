@@ -1,5 +1,6 @@
 use crate::ast::{AstNode, Operator};
 use crate::lexer::Lexer;
+use crate::source_location::Sourcelocation;
 use crate::token::{Token, TokenType};
 use std::fmt::{self, Display};
 
@@ -8,21 +9,18 @@ pub type ParseErrorList = Vec<ParseError>;
 #[derive(Debug, Clone)]
 pub struct ParseError {
     message: String,
-    token: Token,
+    pub location: Sourcelocation,
 }
 
 impl ParseError {
     fn new(message: &str, token: Token) -> ParseError {
+        let start = token.offset;
+        let end = start + token.literal.len();
+
         ParseError {
             message: message.to_string(),
-            token,
+            location: Sourcelocation::new(start, end),
         }
-    }
-    pub fn start(&self) -> usize {
-        self.token.offset
-    }
-    pub fn end(&self) -> usize {
-        self.token.offset + self.token.literal.len()
     }
 }
 

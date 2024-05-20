@@ -12,8 +12,8 @@ pub fn errors_from_file(filename: &str, text: &str, errors: ParseErrorList) {
     let file = SimpleFile::new(filename, text);
 
     for error in errors {
-        let start = error.start();
-        let end = error.end();
+        let start = error.location.start;
+        let end = error.location.end;
         let diagnostic: Diagnostic<()> = Diagnostic::error()
             .with_message(error.to_string())
             .with_code("ParseError")
