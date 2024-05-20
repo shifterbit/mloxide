@@ -1,10 +1,9 @@
-use std::fmt::{self, Display};
-
 use crate::ast::{AstNode, Operator};
 use crate::lexer::Lexer;
 use crate::token::{Token, TokenType};
+use std::fmt::{self, Display};
 
-type ParseErrorList = Vec<ParseError>;
+pub type ParseErrorList = Vec<ParseError>;
 
 #[derive(Debug, Clone)]
 pub struct ParseError {
@@ -19,6 +18,12 @@ impl ParseError {
             token,
         }
     }
+    pub fn start(&self) -> usize {
+        self.token.offset
+    }
+    pub fn end(&self) -> usize {
+        self.token.offset + self.token.literal.len()
+    }
 }
 
 pub fn stringify_parse_errors(errors: ParseErrorList) -> Vec<String> {
@@ -31,22 +36,28 @@ pub fn stringify_parse_errors(errors: ParseErrorList) -> Vec<String> {
 
 impl Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let position = self.token.position;
-        write!(f, "{position} ParseError: {}", self.message)
+        let position = self.token.offset;
+        write!(f, "{position} {}", self.message)
     }
 }
 
 pub fn parse(lexer: &mut Lexer) -> Result<AstNode, Vec<ParseError>> {
     //      parse_expr(lexer, 0)
     let mut errors: Vec<ParseError> = Vec::new();
-    declaration(lexer, &mut errors)
+    declarations(lexer, &mut errors)
 }
 
 fn recover_from_error(lexer: &mut Lexer) {
+    println!("Starting error recovery at {}", lexer.peek().clone());
     while lexer.peek().token_type != TokenType::Eof {
+        println!("{}", lexer.peek());
         match lexer.peek().token_type {
-            TokenType::Val => return,
+            TokenType::Val => {
+                println!("FOUND VAL, Recovered at  {}", lexer.peek().clone());
+                break;
+            }
             _ => {
+                println!("Skipping {:?}", lexer.peek().clone());
                 lexer.next();
             }
         }
@@ -63,20 +74,25 @@ fn expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode
     }
 }
 
-fn declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
+fn declarations(
+    lexer: &mut Lexer,
+    errors: &mut Vec<ParseError>,
+) -> Result<AstNode, ParseErrorList> {
     let mut declarations: Vec<AstNode> = Vec::new();
     let mut found_error = false;
     while lexer.peek().token_type != TokenType::Eof {
         match lexer.peek().token_type {
             TokenType::Val => {
-                let declaration = variable_declaration(lexer, errors);
-                match declaration {
+                let var_declaration = variable_declaration(lexer, errors);
+                match var_declaration {
                     Ok(node) => {
                         declarations.push(node);
                     }
                     Err(_) => {
-                        recover_from_error(lexer);
-                        found_error = true;
+                        if lexer.peek().token_type != TokenType::Eof {
+                            recover_from_error(lexer);
+                            found_error = true;
+                        }
                     }
                 }
             }
@@ -87,18 +103,22 @@ fn declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNod
                         declarations.push(node);
                     }
                     Err(_) => {
-                        recover_from_error(lexer);
-                        found_error = true;
+                        println!("{lexer:#?}");
+                        if lexer.peek().token_type != TokenType::Eof {
+                            recover_from_error(lexer);
+                            found_error = true;
+                        }
                     }
                 }
             }
         }
     }
+    println!("{declarations:#?}");
+    println!("{errors:#?}");
     if found_error {
         Err(errors.to_vec())
     } else {
         Ok(AstNode::Declarations(declarations))
-        
     }
 }
 
@@ -113,24 +133,42 @@ fn variable_declaration(
         errors.push(error_val);
         return Err(errors.clone());
     }
-    let eq_tok = lexer.next();
-    let variable_name = match eq_tok.token_type {
+
+    let id_tok = lexer.next();
+    let variable_name = match id_tok.clone().token_type {
         TokenType::Identifier(name) => name,
         _ => {
-            let error_val = ParseError::new("expected '=' after val", eq_tok);
+            let error_val = ParseError::new("expected identifier after val", id_tok);
             errors.push(error_val);
             return Err(errors.clone());
         }
     };
 
-    lexer.next();
-    let assigned_expr = expression(lexer, errors);
-    let semicolon_tok = lexer.next();
-    if semicolon_tok.token_type != TokenType::Semicolon {
-        let error_val = ParseError::new("expected ';' after variable declaration", semicolon_tok);
+    let eq_tok = lexer.next();
+    if eq_tok.token_type != TokenType::Equal {
+        println!("{}", val_tok);
+        let error_val = ParseError::new(&format!("'=' expected after {variable_name}"), eq_tok);
         errors.push(error_val);
         return Err(errors.clone());
     }
+
+    if lexer.peek().token_type == TokenType::Eof {
+        let error_val = ParseError::new("Expect expression after =", lexer.peek().clone());
+        errors.push(error_val);
+        return Err(errors.clone());
+    }
+    let assigned_expr = expression(lexer, errors);
+
+    let semicolon_tok = lexer.peek();
+    if semicolon_tok.token_type != TokenType::Semicolon {
+        let error_val =
+            ParseError::new("expected ';' after variable declaration", lexer.previous());
+        errors.push(error_val);
+        return Err(errors.clone());
+    }
+    lexer.next();
+
+    println!("{id_tok} {eq_tok} {assigned_expr:?}");
     match assigned_expr {
         Ok(expr) => Ok(AstNode::VariableDeclaration {
             variable: variable_name,
@@ -310,7 +348,11 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, P
                 Err(errors.clone())
             }
         }
-        _ => panic!("Expected literal value"),
+        _ => {
+            let error = ParseError::new("expected a literal value", lexer.peek());
+            errors.push(error);
+            Err(errors.clone())
+        }
     }
 }
 
