@@ -1,6 +1,6 @@
 use crate::{
-    ast::{AstNode, TypedAstNode, Type, Operator},
-    name_resolution::SymbolTable,
+    ast::{AstNode, Operator, Type, TypedAstNode},
+    name_resolution::SymbolTable, source_location::SourcePosition,
 };
 
 
@@ -10,11 +10,11 @@ pub fn typecheck(
     type_table: &mut SymbolTable<Type>,
 ) -> TypedAstNode {
     match node {
-        AstNode::Error => TypedAstNode::Error,
-        AstNode::Int(n) => TypedAstNode::Int(n),
-        AstNode::Float(n) => TypedAstNode::Float(n),
-        AstNode::Bool(b) => TypedAstNode::Bool(b),
-        AstNode::Identifier(i) => match &symbol_table.lookup(&i) {
+        AstNode::Error(loc) => TypedAstNode::Error(loc),
+        AstNode::Int(n, loc) => TypedAstNode::Int(n, loc),
+        AstNode::Float(n, loc) => TypedAstNode::Float(n, loc),
+        AstNode::Bool(b, loc) => TypedAstNode::Bool(b, loc),
+        AstNode::Identifier(i, loc) => match &symbol_table.lookup(&i) {
             Some(exp) => {
                 let typed_expr = typecheck(exp.clone(), symbol_table, type_table);
                 let expr_type = typed_expr.get_type();
@@ -22,23 +22,26 @@ pub fn typecheck(
                 TypedAstNode::Identifier {
                     name: i,
                     node_type: expr_type,
+                    location: loc
                 }
             }
             None => TypedAstNode::Identifier {
                 name: i,
                 node_type: Type::Unknown,
+                location: loc
             },
         },
-        AstNode::Grouping(expr) => {
+        AstNode::Grouping(expr, loc) => {
             let typecheck = typecheck(*expr, symbol_table, type_table);
             let typed_expr = typecheck;
             let expr_type = typed_expr.get_type();
             TypedAstNode::Grouping {
                 expr: Box::new(typed_expr),
                 node_type: expr_type,
+                location: loc
             }
         }
-        AstNode::Binary { op, lhs, rhs } => {
+        AstNode::Binary { op, lhs, rhs, location } => {
             let typed_lhs = typecheck(*lhs, symbol_table, type_table);
             let typed_rhs = typecheck(*rhs, symbol_table, type_table);
             let l_type = typed_lhs.get_type();
@@ -56,9 +59,10 @@ pub fn typecheck(
                 op,
                 lhs: Box::new(typed_lhs),
                 rhs: Box::new(typed_rhs),
+                location
             }
         }
-        AstNode::Unary { op, expr } => {
+        AstNode::Unary { op, expr, location } => {
             let typed_expr = typecheck(*expr, symbol_table, type_table);
             let e_type = typed_expr.get_type();
             let expected_type = allowed_infix_op_type(op, e_type.clone());
@@ -66,12 +70,14 @@ pub fn typecheck(
                 node_type: expected_type,
                 op,
                 expr: Box::new(typed_expr),
+                location
             }
         }
         AstNode::If {
             condition,
             if_body,
             else_body,
+            location
         } => {
             let condition_typed = typecheck(*condition, symbol_table, type_table);
             let if_body_typed = typecheck(*if_body, symbol_table, type_table);
@@ -88,18 +94,20 @@ pub fn typecheck(
                 condition: Box::new(condition_typed),
                 if_body: Box::new(if_body_typed),
                 else_body: Box::new(else_body_typed),
+                location
             }
         }
-        AstNode::VariableDeclaration { variable, value } => {
+        AstNode::VariableDeclaration { variable, value , location} => {
             let val_node = typecheck(*value.clone(), symbol_table, type_table);
             let val_type = val_node.get_type();
             TypedAstNode::VariableDeclaration {
                 variable,
                 value: Box::new(val_node),
                 node_type: val_type,
+                location
             }
         }
-        AstNode::Declarations(nodes) => {
+        AstNode::Declarations(nodes, location) => {
             let mut declarations: Vec<TypedAstNode> = Vec::new();
             for node in nodes {
                 declarations.push(typecheck(node, symbol_table, type_table));
@@ -112,6 +120,7 @@ pub fn typecheck(
             TypedAstNode::Declarations {
                 declarations,
                 node_type: Type::Declarations(node_types),
+                location
             }
         }
     }

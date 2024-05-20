@@ -36,15 +36,15 @@ impl<T> SymbolTable<T> where T: Clone {
 
 pub fn resolve_symbols(ast: AstNode, symbol_table: &mut SymbolTable<AstNode>)  {
     match ast {
-        AstNode::Declarations(nodes) => {
+        AstNode::Declarations(nodes, _) => {
             for node in nodes  {
                 resolve_symbols(node, symbol_table)
             }
         },
-        AstNode::VariableDeclaration { variable, value } => {
+        AstNode::VariableDeclaration { variable, value, location: _ } => {
             symbol_table.insert(&variable, *value);
         },
-        AstNode::Int(_) | AstNode::Float(_) | AstNode::Bool(_) | AstNode::Identifier(_) => {},
+        AstNode::Int(_, _) | AstNode::Float(_, _) | AstNode::Bool(_, _) | AstNode::Identifier(_,_) => {},
         _ => {}
     }
     

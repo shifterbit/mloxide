@@ -42,7 +42,7 @@ impl Token {
 impl SourcePosition for Token {
     fn source_location(&self) -> SourceLocation {
         let token = self;
-        let literal = token.literal;
+        let literal = &token.literal;
         let start = token.offset;
         let end = start + literal.len();
         SourceLocation::new(start, end)

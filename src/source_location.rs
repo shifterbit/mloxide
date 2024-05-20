@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, Copy)]
 pub struct SourceLocation {
     pub start: usize,
