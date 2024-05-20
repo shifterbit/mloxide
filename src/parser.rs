@@ -75,7 +75,6 @@ fn declarations(
     errors: &mut Vec<ParseError>,
 ) -> Result<AstNode, ParseErrorList> {
     let mut declarations: Vec<AstNode> = Vec::new();
-    let mut found_error = false;
     let declarations_loc_start = lexer.peek().source_location();
     let start = declarations_loc_start.start;
     let mut end = declarations_loc_start.end;
@@ -84,28 +83,9 @@ fn declarations(
             TokenType::Val => {
                 let var_declaration = variable_declaration(lexer, errors);
                 declarations.push(var_declaration.clone());
-                match var_declaration {
-                    AstNode::VariableDeclaration {
-                        variable: _,
-                        value,
-                        location,
-                    } => {
-                        end = location.end;
-                        if let AstNode::Error(_) = *value.clone() {
-                            found_error = true;
-                            recover_from_error(lexer);
-                        }
-                    }
-                    AstNode::Error(loc) => {
-                        end = loc.end;
-                        declarations.push(AstNode::Error(loc));
-                        found_error = true;
-                        recover_from_error(lexer);
-                    }
-                    _ => {
-                        panic!("This should not happen");
-                    }
-                };
+                if let AstNode::Error(_) = var_declaration {
+                    recover_from_error(lexer);
+                }
             }
             _ => {
                 let expr = expression(lexer, errors);
@@ -115,11 +95,11 @@ fn declarations(
         }
     }
 
-    if found_error {
-        Err(errors.to_vec())
-    } else {
+    if errors.is_empty() {
         let location = SourceLocation::new(start, end);
         Ok(AstNode::Declarations(declarations, location))
+    } else {
+        Err(errors.to_vec())
     }
 }
 
