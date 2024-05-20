@@ -28,7 +28,6 @@ impl Display for ParseError {
 }
 
 pub fn parse(lexer: &mut Lexer) -> Result<AstNode, Vec<ParseError>> {
-    //      parse_expr(lexer, 0)
     let mut errors: Vec<ParseError> = Vec::new();
     declarations(lexer, &mut errors)
 }
@@ -152,6 +151,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstN
         errors.push(error_val);
         return AstNode::Error(location);
     }
+
     let assigned_expr = expression(lexer, errors);
 
     let semicolon_tok = lexer.peek();
@@ -162,7 +162,6 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstN
         return AstNode::Error(location);
     }
     let semicolon_loc = lexer.next().source_location();
-
     let location = SourceLocation::new(val_tok_loc.start, semicolon_loc.end);
     AstNode::VariableDeclaration {
         variable: variable_name,
@@ -181,6 +180,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         errors.push(error_val);
         return AstNode::Error(SourceLocation::new(start, end));
     }
+    lexer.next();
 
     let condition = expression(lexer, errors);
     let expr_loc = lexer.peek().source_location();
@@ -204,7 +204,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
 
     let if_body_start = lexer.next().source_location().start;
     let if_body = expression(lexer, errors);
-    if let AstNode::Error(_) = condition {
+    if let AstNode::Error(_) = if_body {
         let if_body_end = lexer.peek().source_location().end;
         let error_val = ParseError::new(
             "expected expression after then",
@@ -226,7 +226,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let else_body = expression(lexer, errors);
     let else_body_start = else_body_loc.start;
     let else_body_end = else_body_loc.end;
-    if let AstNode::Error(_) = condition {
+    if let AstNode::Error(_) = else_body {
         let error_val = ParseError::new(
             "expected expression after else",
             lexer.previous().source_location(),
