@@ -26,14 +26,6 @@ impl ParseError {
     }
 }
 
-pub fn stringify_parse_errors(errors: ParseErrorList) -> Vec<String> {
-    let mut messages: Vec<String> = Vec::new();
-    for error in errors {
-        messages.push(error.to_string());
-    }
-    messages
-}
-
 impl Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.message)
