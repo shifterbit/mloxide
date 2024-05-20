@@ -14,6 +14,7 @@ pub enum Type {
 
 #[derive(Clone, Debug)]
 pub enum TypedAstNode {
+    Error,
     Int(i64),
     Float(f64),
     Bool(bool),
@@ -57,6 +58,7 @@ pub enum TypedAstNode {
 impl TypedAstNode {
     pub fn get_type(&self) -> Type {
         match self {
+            TypedAstNode::Error => Type::Unknown,
             TypedAstNode::Int(_) => Type::Int,
             TypedAstNode::Float(_) => Type::Float,
             TypedAstNode::Bool(_) => Type::Bool,
@@ -104,6 +106,7 @@ pub fn typecheck(
     type_table: &mut SymbolTable<Type>,
 ) -> TypedAstNode {
     match node {
+        AstNode::Error => TypedAstNode::Error,
         AstNode::Int(n) => TypedAstNode::Int(n),
         AstNode::Float(n) => TypedAstNode::Float(n),
         AstNode::Bool(b) => TypedAstNode::Bool(b),

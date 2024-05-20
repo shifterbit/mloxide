@@ -63,6 +63,9 @@ pub fn eval_expression(ast: TypedAstNode, symbol_table: &mut SymbolTable<Value>)
             }
             values.last().unwrap().clone()
         }
+        TypedAstNode::Error => {
+            panic!("This should not happen");
+        }
     }
 }
 

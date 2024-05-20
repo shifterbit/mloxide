@@ -10,6 +10,7 @@ pub enum Operator {
 }
 #[derive(Debug, Clone)]
 pub enum AstNode {
+    Error,
     Int(i64),
     Float(f64),
     Bool(bool),
