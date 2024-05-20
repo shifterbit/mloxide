@@ -364,7 +364,11 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
             }
         }
         _ => {
-            let error = ParseError::new("expected a literal value", lexer.peek().source_location());
+            let literal = token.literal;
+            let error = ParseError::new(
+                &format!("unexpected token {literal}"),
+                lexer.previous().source_location(),
+            );
             errors.push(error);
             AstNode::Error(tok_location)
         }
