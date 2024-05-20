@@ -1,6 +1,6 @@
 use std::{fmt::{self, Display}};
 
-use crate::{ast::Operator, name_resolution::SymbolTable, type_checker::TypedAstNode};
+use crate::{ast::{Operator, TypedAstNode}, name_resolution::SymbolTable};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -23,45 +23,51 @@ impl Display for Value {
 
 pub fn eval_expression(ast: TypedAstNode, symbol_table: &mut SymbolTable<Value>) -> Value {
     match ast {
-        TypedAstNode::Int(n) => Value::Int(n),
-        TypedAstNode::Float(n) => Value::Float(n),
-        TypedAstNode::Bool(b) => Value::Bool(b),
-        TypedAstNode::Identifier { name, node_type: _ } => {
+        TypedAstNode::Int(n, _) => Value::Int(n),
+        TypedAstNode::Float(n, _) => Value::Float(n),
+        TypedAstNode::Bool(b, _) => Value::Bool(b),
+        TypedAstNode::Identifier { name, node_type: _, location: _ } => {
             match symbol_table.lookup(&name) {
                 Some(v) =>  v,
                 None => panic!("Variable does not exist")
             }
         },
-        TypedAstNode::Grouping { expr, node_type: _ } => eval_expression(*expr, symbol_table),
+        TypedAstNode::Grouping { expr, node_type: _, location: _ } => eval_expression(*expr, symbol_table),
         TypedAstNode::Binary {
             node_type: _,
             op,
             lhs,
             rhs,
+            location: _
         } => eval_binary(op, *lhs, *rhs, symbol_table),
         TypedAstNode::Unary {
             node_type: _,
             op,
             expr,
+            location: _,
         } => eval_unary(op, *expr, symbol_table),
         TypedAstNode::If {
             node_type: _,
             condition,
             if_body,
             else_body,
+            location: _
         } => eval_if_expression(*condition, *if_body, *else_body, symbol_table),
-        TypedAstNode::VariableDeclaration { variable, value, node_type: _ } => {
+        TypedAstNode::VariableDeclaration { variable, value, node_type: _, location: _ } => {
             let val = eval_expression(*value, symbol_table);
             symbol_table.insert(&variable, val);
             Value::Unit
         },
-        TypedAstNode::Declarations{ declarations, node_type: _ } => {
+        TypedAstNode::Declarations{ declarations, node_type: _, location: _ } => {
             let mut values: Vec<Value> = Vec::new();
             for declaration in declarations {
                 let value = eval_expression(declaration, symbol_table);
                 values.push(value)
             }
             values.last().unwrap().clone()
+        }
+        TypedAstNode::Error(_) => {
+            panic!("This should not happen");
         }
     }
 }

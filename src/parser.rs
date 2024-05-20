@@ -1,51 +1,53 @@
+use crate::ast::{AstNode, Operator};
+use crate::error_reporting::CompilerError;
+use crate::lexer::Lexer;
+use crate::source_location::{SourceLocation, SourcePosition};
+use crate::token::TokenType;
 use std::fmt::{self, Display};
 
-use crate::ast::{AstNode, Operator};
-use crate::lexer::Lexer;
-use crate::token::{Token, TokenType};
-
-type ParseErrorList = Vec<ParseError>;
+pub type ParseErrorList = Vec<ParseError>;
 
 #[derive(Debug, Clone)]
 pub struct ParseError {
     message: String,
-    token: Token,
+    location: SourceLocation,
 }
 
-impl ParseError {
-    fn new(message: &str, token: Token) -> ParseError {
+impl CompilerError for ParseError {
+    fn new(message: &str, location: SourceLocation) -> ParseError {
         ParseError {
             message: message.to_string(),
-            token,
+            location,
         }
     }
-}
-
-pub fn stringify_parse_errors(errors: ParseErrorList) -> Vec<String> {
-    let mut messages: Vec<String> = Vec::new();
-    for error in errors {
-        messages.push(error.to_string());
+    fn location(&self) -> SourceLocation {
+        self.location
     }
-    messages
+    fn message(&self) -> &str {
+        &self.message
+    }
+    fn error_type(&self) -> &str {
+        "SyntaxError"
+    }
 }
 
 impl Display for ParseError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let position = self.token.position;
-        write!(f, "{position} ParseError: {}", self.message)
+        write!(f, "{}", self.message)
     }
 }
 
 pub fn parse(lexer: &mut Lexer) -> Result<AstNode, Vec<ParseError>> {
-    //      parse_expr(lexer, 0)
     let mut errors: Vec<ParseError> = Vec::new();
-    declaration(lexer, &mut errors)
+    declarations(lexer, &mut errors)
 }
 
 fn recover_from_error(lexer: &mut Lexer) {
     while lexer.peek().token_type != TokenType::Eof {
         match lexer.peek().token_type {
-            TokenType::Val => return,
+            TokenType::Val => {
+                break;
+            }
             _ => {
                 lexer.next();
             }
@@ -53,264 +55,303 @@ fn recover_from_error(lexer: &mut Lexer) {
     }
 }
 
-fn expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
+fn expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let curr = lexer.peek();
-    let token_type = curr.token_type;
+    let token_type = curr.token_type.clone();
+    let start = curr.source_location().start;
+
     match token_type {
         TokenType::If => if_expression(lexer, errors),
-        TokenType::Eof => Err(errors.clone()),
+        TokenType::Eof => {
+            let location = SourceLocation::new(start, curr.source_location().end);
+            AstNode::Error(location)
+        }
         _ => equality(lexer, errors),
     }
 }
 
-fn declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
+fn declarations(
+    lexer: &mut Lexer,
+    errors: &mut Vec<ParseError>,
+) -> Result<AstNode, ParseErrorList> {
     let mut declarations: Vec<AstNode> = Vec::new();
-    let mut found_error = false;
+    let declarations_loc_start = lexer.peek().source_location();
+    let start = declarations_loc_start.start;
+    let mut end = declarations_loc_start.end;
     while lexer.peek().token_type != TokenType::Eof {
         match lexer.peek().token_type {
             TokenType::Val => {
-                let declaration = variable_declaration(lexer, errors);
-                match declaration {
-                    Ok(node) => {
-                        declarations.push(node);
-                    }
-                    Err(_) => {
-                        recover_from_error(lexer);
-                        found_error = true;
-                    }
+                let var_declaration = variable_declaration(lexer, errors);
+                declarations.push(var_declaration.clone());
+                if let AstNode::Error(_) = var_declaration {
+                    recover_from_error(lexer);
                 }
             }
             _ => {
                 let expr = expression(lexer, errors);
-                match expr {
-                    Ok(node) => {
-                        declarations.push(node);
-                    }
-                    Err(_) => {
-                        recover_from_error(lexer);
-                        found_error = true;
-                    }
-                }
+                end = lexer.peek().source_location().end;
+                declarations.push(expr);
             }
         }
     }
-    if found_error {
-        Err(errors.to_vec())
+
+    if errors.is_empty() {
+        let location = SourceLocation::new(start, end);
+        Ok(AstNode::Declarations(declarations, location))
     } else {
-        Ok(AstNode::Declarations(declarations))
-        
+        Err(errors.to_vec())
     }
 }
 
-fn variable_declaration(
-    lexer: &mut Lexer,
-    errors: &mut Vec<ParseError>,
-) -> Result<AstNode, ParseErrorList> {
+fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let val_tok = lexer.next();
+    let val_tok_loc = val_tok.source_location();
     if val_tok.token_type != TokenType::Val {
-        println!("{}", val_tok);
-        let error_val = ParseError::new("variable declarations should start with 'val'", val_tok);
+        let location = val_tok_loc;
+
+        let error_val = ParseError::new("variable declarations should start with 'val'", location);
         errors.push(error_val);
-        return Err(errors.clone());
+        return AstNode::Error(location);
     }
-    let eq_tok = lexer.next();
-    let variable_name = match eq_tok.token_type {
+
+    let id_tok = lexer.peek();
+    let variable_name = match id_tok.clone().token_type {
         TokenType::Identifier(name) => name,
         _ => {
-            let error_val = ParseError::new("expected '=' after val", eq_tok);
+            let location = lexer.previous().source_location();
+            let error_val = ParseError::new("expected identifier after val", location);
             errors.push(error_val);
-            return Err(errors.clone());
+            return AstNode::Error(location);
         }
     };
-
     lexer.next();
+
+    let eq_tok = lexer.peek();
+    if eq_tok.token_type != TokenType::Equal {
+        let location = lexer.previous().source_location();
+        let error_val = ParseError::new(&format!("'=' expected after {variable_name}"), location);
+        errors.push(error_val);
+        return AstNode::Error(location);
+    }
+    lexer.next();
+
+    if [TokenType::Eof, TokenType::Val, TokenType::Semicolon].contains(&lexer.peek().token_type) {
+        let location = lexer.previous().source_location();
+        let error_val = ParseError::new("Expect expression after =", location);
+        errors.push(error_val);
+        return AstNode::Error(location);
+    }
+
     let assigned_expr = expression(lexer, errors);
-    let semicolon_tok = lexer.next();
+
+    let semicolon_tok = lexer.peek();
     if semicolon_tok.token_type != TokenType::Semicolon {
-        let error_val = ParseError::new("expected ';' after variable declaration", semicolon_tok);
+        let location = lexer.previous().source_location();
+        let error_val = ParseError::new("expected ';' after variable declaration", location);
         errors.push(error_val);
-        return Err(errors.clone());
+        return AstNode::Error(location);
     }
-    match assigned_expr {
-        Ok(expr) => Ok(AstNode::VariableDeclaration {
-            variable: variable_name,
-            value: Box::new(expr),
-        }),
-        err => err,
+    let semicolon_loc = lexer.next().source_location();
+    let location = SourceLocation::new(val_tok_loc.start, semicolon_loc.end);
+    AstNode::VariableDeclaration {
+        variable: variable_name,
+        value: Box::new(assigned_expr),
+        location,
     }
 }
 
-fn if_expression(
-    lexer: &mut Lexer,
-    errors: &mut Vec<ParseError>,
-) -> Result<AstNode, ParseErrorList> {
-    let if_tok = lexer.next();
+fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
+    let if_tok = lexer.peek();
+    let if_loc = if_tok.source_location();
     if if_tok.token_type != TokenType::If {
-        let error_val = ParseError::new("expected token if", if_tok);
+        let start = if_loc.start;
+        let end = if_loc.end;
+        let error_val = ParseError::new("expected token if", lexer.previous().source_location());
         errors.push(error_val);
-        return Err(errors.clone());
+        return AstNode::Error(SourceLocation::new(start, end));
     }
+    lexer.next();
+    let start_cond = lexer.peek().source_location().start;
     let condition = expression(lexer, errors);
-    let condition_expr: AstNode = match condition {
-        Ok(expr) => expr,
-        Err(errors) => return Err(errors.clone()),
-    };
+    let end_cond = lexer.peek().source_location().end;
+    if let AstNode::Error(_) = condition {
+        let end = end_cond;
+        let error_val = ParseError::new(
+            "expected expression after if",
+            lexer.previous().source_location(),
+        );
+        errors.push(error_val);
+        return AstNode::Error(SourceLocation::new(start_cond, end));
+    }
 
-    let then_tok = lexer.next();
+    let then_tok = lexer.peek();
+    let then_loc = then_tok.source_location();
     if then_tok.token_type != TokenType::Then {
-        let error_val = ParseError::new("expected token then", then_tok);
+        let error_val = ParseError::new("expected token then", lexer.previous().source_location());
         errors.push(error_val);
-        return Err(errors.clone());
+        return AstNode::Error(then_loc);
     }
 
+    let if_body_start = lexer.next().source_location().start;
     let if_body = expression(lexer, errors);
-    let if_expr: AstNode = match if_body {
-        Ok(expr) => expr,
-        Err(errors) => return Err(errors),
-    };
-
-    let else_tok = lexer.next();
-    if else_tok.token_type != TokenType::Else {
-        let error_val = ParseError::new("expected token else", else_tok);
+    if let AstNode::Error(_) = if_body {
+        let if_body_end = lexer.peek().source_location().end;
+        let error_val = ParseError::new(
+            "expected expression after then",
+            lexer.previous().source_location(),
+        );
         errors.push(error_val);
-        return Err(errors.clone());
+        return AstNode::Error(SourceLocation::new(if_body_start, if_body_end));
     }
-    let else_body = expression(lexer, errors);
-    let else_expr: AstNode = match else_body {
-        Ok(expr) => expr,
-        Err(errors) => return Err(errors),
-    };
 
-    Ok(AstNode::If {
-        condition: Box::new(condition_expr),
-        if_body: Box::new(if_expr),
-        else_body: Box::new(else_expr),
-    })
+    let else_tok = lexer.peek();
+    let else_loc = else_tok.source_location();
+    if else_tok.token_type != TokenType::Else {
+        let error_val = ParseError::new("expected token else", lexer.previous().source_location());
+        errors.push(error_val);
+        return AstNode::Error(else_loc);
+    }
+
+    let else_body_loc = lexer.next().source_location();
+    let else_body = expression(lexer, errors);
+    let else_body_start = else_body_loc.start;
+    let else_body_end = else_body_loc.end;
+    if let AstNode::Error(_) = else_body {
+        let error_val = ParseError::new(
+            "expected expression after else",
+            lexer.previous().source_location(),
+        );
+        errors.push(error_val);
+        return AstNode::Error(SourceLocation::new(else_body_start, else_body_end));
+    }
+
+    AstNode::If {
+        condition: Box::new(condition),
+        if_body: Box::new(if_body),
+        else_body: Box::new(else_body),
+        location: SourceLocation::new(if_loc.start, lexer.peek().source_location().end),
+    }
 }
 
-fn equality(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
-    let expr = term(lexer, errors);
-    let lhs: AstNode = match expr {
-        Ok(e) => e,
-        Err(errs) => return Err(errs),
-    };
+fn equality(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
+    let start = lexer.peek().source_location().start;
+    let lhs = term(lexer, errors);
 
     let token = lexer.peek();
     match token.token_type {
         TokenType::EqualEqual | TokenType::NotEqual => {
             lexer.next();
-            let right = equality(lexer, errors);
-            let rhs: AstNode = match right {
-                Ok(e) => e,
-                Err(e) => return Err(e),
-            };
+            let rhs = equality(lexer, errors);
+            let end = lexer.previous().source_location().end;
 
-            Ok(AstNode::Binary {
+            AstNode::Binary {
                 op: get_operator(token.token_type),
                 lhs: Box::new(lhs),
                 rhs: Box::new(rhs),
-            })
+                location: SourceLocation::new(start, end),
+            }
         }
-        _ => Ok(lhs),
+        _ => lhs,
     }
 }
 
-fn term(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
-    let expr = factor(lexer, errors);
-    let lhs: AstNode = match expr {
-        Ok(e) => e,
-        Err(e) => return Err(e),
-    };
+fn term(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
+    let start = lexer.peek().source_location().start;
+    let lhs = factor(lexer, errors);
 
     let token = lexer.peek();
     match token.token_type {
         TokenType::Minus | TokenType::Plus => {
             lexer.next();
-            let right = term(lexer, errors);
-            let rhs: AstNode = match right {
-                Ok(e) => e,
-                Err(e) => return Err(e),
-            };
+            let rhs = term(lexer, errors);
+            let end = lexer.previous().source_location().end;
 
-            Ok(AstNode::Binary {
+            AstNode::Binary {
                 op: get_operator(token.token_type),
                 lhs: Box::new(lhs),
                 rhs: Box::new(rhs),
-            })
+                location: SourceLocation::new(start, end),
+            }
         }
-        _ => Ok(lhs),
+        _ => lhs,
     }
 }
 
-fn factor(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
-    let expr = unary(lexer, errors);
-    let lhs: AstNode = match expr {
-        Ok(e) => e,
-        Err(e) => return Err(e),
-    };
+fn factor(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
+    let start = lexer.peek().source_location().start;
+    let lhs = unary(lexer, errors);
 
     let token = lexer.peek();
     match token.token_type {
         TokenType::ForwardSlash | TokenType::Star => {
             lexer.next();
-            let right = factor(lexer, errors);
-            let rhs: AstNode = match right {
-                Ok(e) => e,
-                Err(e) => return Err(e),
-            };
-            Ok(AstNode::Binary {
+            let rhs = factor(lexer, errors);
+            let end = lexer.previous().source_location().end;
+            AstNode::Binary {
                 op: get_operator(token.token_type),
                 lhs: Box::new(lhs),
                 rhs: Box::new(rhs),
-            })
+                location: SourceLocation::new(start, end),
+            }
         }
-        _ => Ok(lhs),
+        _ => lhs,
     }
 }
 
-fn unary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
+fn unary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let token = lexer.peek();
+    let start = token.source_location().start;
     match token.token_type {
         TokenType::Negation => {
             lexer.next();
             let expr = unary(lexer, errors);
-            let right_expr: AstNode = match expr {
-                Ok(e) => e,
-                Err(e) => return Err(e),
-            };
+            let end = lexer.previous().source_location().end;
 
-            Ok(AstNode::Unary {
+            AstNode::Unary {
                 op: get_operator(token.token_type),
-                expr: Box::new(right_expr),
-            })
+                expr: Box::new(expr),
+                location: SourceLocation::new(start, end),
+            }
         }
         _ => primary(lexer, errors),
     }
 }
 
-fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Result<AstNode, ParseErrorList> {
+fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let token = lexer.next();
+    let tok_location = token.source_location();
     match token.token_type {
-        TokenType::Int(n) => Ok(AstNode::Int(n)),
-        TokenType::Float(n) => Ok(AstNode::Float(n)),
-        TokenType::Bool(b) => Ok(AstNode::Bool(b)),
-        TokenType::Identifier(i) => Ok(AstNode::Identifier(i)),
+        TokenType::Int(n) => AstNode::Int(n, tok_location),
+        TokenType::Float(n) => AstNode::Float(n, tok_location),
+        TokenType::Bool(b) => AstNode::Bool(b, tok_location),
+        TokenType::Identifier(i) => AstNode::Identifier(i, tok_location),
         TokenType::LeftParen => {
+            let start = tok_location.start;
             let expr = expression(lexer, errors);
-            let inner_expr: AstNode = match expr {
-                Ok(e) => e,
-                Err(e) => return Err(e),
-            };
+            let closing_paren = lexer.peek();
+            let end = closing_paren.source_location().end;
 
-            if lexer.next().token_type == TokenType::RightParen {
-                Ok(AstNode::Grouping(Box::new(inner_expr)))
+            if closing_paren.token_type == TokenType::RightParen {
+                lexer.next();
+                AstNode::Grouping(Box::new(expr), SourceLocation::new(start, end))
             } else {
-                let error = ParseError::new("Expected closing parenthesis", lexer.peek());
+                let error = ParseError::new(
+                    "Expected closing parenthesis",
+                    lexer.peek().source_location(),
+                );
                 errors.push(error);
-                Err(errors.clone())
+                AstNode::Error(SourceLocation::new(start, end))
             }
         }
-        _ => panic!("Expected literal value"),
+        _ => {
+            let literal = token.literal;
+            let error = ParseError::new(
+                &format!("unexpected token {literal}"),
+                lexer.previous().source_location(),
+            );
+            errors.push(error);
+            AstNode::Error(tok_location)
+        }
     }
 }
 

@@ -1,10 +1,12 @@
 use std::fmt::{self, Display};
 
+use crate::source_location::{SourceLocation, SourcePosition};
+
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
     pub literal: String,
-    pub position: Position,
+    pub offset: usize,
 }
 
 impl Default for Token {
@@ -12,7 +14,7 @@ impl Default for Token {
         Token {
             literal: "".to_string(),
             token_type: TokenType::Eof,
-            position: Position::new(0, 0),
+            offset: 0,
         }
     }
 }
@@ -22,18 +24,28 @@ impl Display for Token {
         write!(
             f,
             "\"{}\" {} {}",
-            self.literal, self.token_type, self.position
+            self.literal, self.token_type, self.offset
         )
     }
 }
 
 impl Token {
-    pub fn new(literal: String, token_type: TokenType, position: Position) -> Token {
+    pub fn new(literal: String, token_type: TokenType, offset: usize) -> Token {
         Token {
             literal,
             token_type,
-            position,
+            offset,
         }
+    }
+}
+
+impl SourcePosition for Token {
+    fn source_location(&self) -> SourceLocation {
+        let token = self;
+        let literal = &token.literal;
+        let start = token.offset;
+        let end = start + literal.len();
+        SourceLocation::new(start, end)
     }
 }
 
@@ -49,7 +61,7 @@ pub enum TokenType {
     Negation,
     Equal,
     Semicolon,
-    
+
     // Multi Character Tokens
     EqualEqual,
     NotEqual,
@@ -70,7 +82,7 @@ pub enum TokenType {
     Val,
 
     // EOF
-    Eof
+    Eof,
 }
 
 impl Display for TokenType {
@@ -96,28 +108,6 @@ impl Display for TokenType {
             TokenType::Else => write!(f, "Else"),
             TokenType::Val => write!(f, "Val"),
             TokenType::Identifier(i) => write!(f, "Identifier({})", i),
-            
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct Position {
-    line: u32,
-    column: u32,
-}
-
-impl Display for Position {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}:{}", self.line, self.column)
-    }
-}
-
-impl Position {
-    pub fn new(line: u32, start_column: u32) -> Position {
-        Position {
-            line,
-            column: start_column,
         }
     }
 }

@@ -1,77 +1,92 @@
+use crate::token::{Token, TokenType};
 use std::iter::Peekable;
-use crate::token::{Position, Token, TokenType};
-
 
 #[derive(Debug)]
 pub struct Lexer {
     tokens: Vec<Token>,
+    position: usize,
+    eof_token: Token,
 }
 
 impl Lexer {
     pub fn new(text: &str) -> Lexer {
         let mut tokens: Vec<Token> = Vec::new();
-        let mut line = 1;
-        let mut column = 1;
+        let mut offset: usize = 0;
         let mut chars = text.chars().peekable();
         while let Some(character) = chars.peek() {
             match character {
-                '\n' => {
-                    line += 1;
-                    column = 1;
-                    chars.next();
-                }
-                ' ' => {
-                    column += 1;
-                    chars.next();
-                }
-                '\t' => {
-                    column += 4;
+                '\n' | ' ' | '\t' => {
+                    offset += 1;
                     chars.next();
                 }
                 '=' | '!' => {
                     let literal = read_multi_character_token(&mut chars);
-                    let length = literal.len() as u32;
-                    let token = match_multi_character_token(&literal, line, column);
-                    tokens.push(token);
-                    column += length;
-                    chars.next();
+                    let length = literal.len();
+                    let token = match_multi_character_token(&literal, offset);
+                    tokens.push(token.clone());
+                    offset += length;
                 }
-                '(' | ')' | '+' | '-' | '*' | '/' | '~' | ';'=> {
-                    let token = match_single_character_token(*character, line, column);
+                '(' | ')' | '+' | '-' | '*' | '/' | '~' | ';' => {
+                    let token = match_single_character_token(*character, offset);
                     tokens.push(token.unwrap());
-                    column += 1;
+                    offset += 1;
                     chars.next();
                 }
                 _c if is_digit(character) => {
                     let literal = read_number(&mut chars);
-                    let length = literal.len() as u32;
-                    let token = match_number(&literal, line, column);
-                    tokens.push(token);
-                    column += length;
+                    let length = literal.len();
+                    let token = match_number(&literal, offset);
+                    tokens.push(token.clone());
+                    offset += length;
                 }
                 _c if is_alpha(character) => {
                     let literal = read_indentifier(&mut chars);
-                    let length = literal.len() as u32;
+                    let length = literal.len();
                     let token_type = match_keywords(&literal);
-                    let token = Token {token_type, literal, position: Position::new(line, column)};
+                    let token = Token {
+                        token_type,
+                        literal,
+                        offset,
+                    };
                     tokens.push(token);
-                    column += length;
+                    offset += length;
                 }
                 _ => {
-                    column += 1;
+                    offset += 1;
                     chars.next();
                 }
             }
         }
-        tokens.reverse();
-        Lexer { tokens }
+
+        let eof_token = Token {
+            token_type: TokenType::Eof,
+            literal: "".to_string(),
+            offset: (offset - 1),
+        };
+        Lexer {
+            tokens,
+            eof_token,
+            position: 0,
+        }
     }
-    pub fn peek(self: &Lexer) -> Token {
-        let token = self.tokens.last().cloned().unwrap_or_default();
-        token
+    pub fn peek(&self) -> Token {
+        if self.position < self.tokens.len() {
+            self.tokens[self.position].clone()
+        } else {
+            self.eof_token.clone()
+        }
+    }
+    pub fn previous(&self) -> Token {
+        self.tokens[self.position - 1].clone()
     }
     pub fn next(&mut self) -> Token {
-        self.tokens.pop().unwrap_or_default()
+        if self.position < self.tokens.len() {
+            let tok = self.tokens[self.position].clone();
+            self.position += 1;
+            tok
+        } else {
+            self.eof_token.clone()
+        }
     }
 }
 
@@ -85,14 +100,18 @@ static DIGITS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 fn read_indentifier<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
     let mut literal: String = "".to_string();
-    while let Some(c) = chars.peek() {
-        if LETTERS.contains(c) || DIGITS.contains(c) || *c == '_' {
-            literal.push(c.to_owned());
-            chars.next();
+    while let Some(c) = chars.next() {
+        literal.push(c.to_owned());
+
+        if let Some(c) = chars.peek() {
+            if !(LETTERS.contains(c) || DIGITS.contains(c) || *c == '_') {
+                break;
+            }
         } else {
             break;
         }
     }
+
     literal
 }
 
@@ -136,50 +155,44 @@ fn read_number<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
     num_str
 }
 
-fn match_number(num_str: &str, line: u32, column: u32) -> Token {
-    let position = Position::new(line, column);
+fn match_number(num_str: &str, offset: usize) -> Token {
     if num_str.contains('.') {
         let float_val: f64 = num_str.parse().unwrap();
-        Token::new(num_str.to_string(), TokenType::Float(float_val), position)
+        Token::new(num_str.to_string(), TokenType::Float(float_val), offset)
     } else {
         let int_val: i64 = num_str.parse().unwrap();
-        
-        Token::new(num_str.to_string(), TokenType::Int(int_val), position)
+
+        Token::new(num_str.to_string(), TokenType::Int(int_val), offset)
     }
 }
 
 fn read_multi_character_token<I: Iterator<Item = char>>(chars: &mut Peekable<I>) -> String {
-    let mut literal: String = chars.peek().unwrap().to_string();
+    let mut literal: String = chars.next().unwrap().to_string();
 
-    if let Some('=') = chars.next() {
+    if let Some('=') = chars.peek() {
         literal.push('=');
+        chars.next();
     };
     literal
 }
 
-fn match_multi_character_token(literal: &str, line: u32, column: u32) -> Token {
+fn match_multi_character_token(literal: &str, offset: usize) -> Token {
     match literal {
-        "!=" => {
-            Token {
-                token_type: TokenType::NotEqual,
-                literal: literal.to_owned(),
-                position: Position::new(line, column),
-            }
-        }
-        "==" => {
-            Token {
-                token_type: TokenType::EqualEqual,
-                literal: literal.to_owned(),
-                position: Position::new(line, column),
-            }
+        "!=" => Token {
+            token_type: TokenType::NotEqual,
+            literal: literal.to_owned(),
+            offset,
         },
-        "=" => {
-            Token {
-                token_type: TokenType::Equal,
-                literal: literal.to_owned(),
-                position: Position::new(line, column)
-            }
-        }
+        "==" => Token {
+            token_type: TokenType::EqualEqual,
+            literal: literal.to_owned(),
+            offset,
+        },
+        "=" => Token {
+            token_type: TokenType::Equal,
+            literal: literal.to_owned(),
+            offset,
+        },
         _ => {
             panic!("Unexpected Character")
         }
@@ -190,10 +203,8 @@ fn match_multi_character_token(literal: &str, line: u32, column: u32) -> Token {
 struct InvalidTokenError;
 fn match_single_character_token(
     character: char,
-    line: u32,
-    column: u32,
+    offset: usize,
 ) -> Result<Token, InvalidTokenError> {
-    let position = Position::new(line, column);
     let token_type = match character {
         '(' => TokenType::LeftParen,
         ')' => TokenType::RightParen,
@@ -205,6 +216,6 @@ fn match_single_character_token(
         ';' => TokenType::Semicolon,
         _ => return Err(InvalidTokenError),
     };
-    let token = Token::new(character.to_string(), token_type, position);
+    let token = Token::new(character.to_string(), token_type, offset);
     Ok(token)
 }
