@@ -138,7 +138,7 @@ pub fn typecheck(
                 }
                 types_str = types_str.trim().trim_end_matches(',').to_string();
                 let error = TypeError::new(
-                    &format!("expected one of: {types_str} \n got {e_type}"),
+                    &format!("value of type {e_type} cannot be used with operator {op}"),
                     location,
                 );
                 errors.push(error);
@@ -162,7 +162,7 @@ pub fn typecheck(
             let condition_type = condition_typed.get_type();
             if condition_type != Type::Bool {
                 let error = TypeError::new(
-                    "expected a boolean value",
+                    "expected a boolean value for the if condition",
                     condition_typed.source_location(),
                 );
                 errors.push(error);
