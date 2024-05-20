@@ -47,29 +47,29 @@ pub enum AstNode {
 impl SourcePosition for AstNode {
     fn source_location(&self) -> SourceLocation {
         match self {
-            AstNode::Error(location) => location.clone(),
-            AstNode::Int(_, location) => location.clone(),
-            AstNode::Float(_, location) => location.clone(),
-            AstNode::Bool(_, location) => location.clone(),
-            AstNode::Identifier(_, location) => location.clone(),
-            AstNode::Grouping(_, location) => location.clone(),
-            AstNode::Declarations(_, location) => location.clone(),
+            AstNode::Error(location) => *location,
+            AstNode::Int(_, location) => *location,
+            AstNode::Float(_, location) => *location,
+            AstNode::Bool(_, location) => *location,
+            AstNode::Identifier(_, location) => *location,
+            AstNode::Grouping(_, location) => *location,
+            AstNode::Declarations(_, location) => *location,
             AstNode::VariableDeclaration {
                 variable: _,
                 value: _,
                 location,
-            } => location.clone(),
+            } => *location,
             AstNode::Binary {
                 op: _,
                 lhs: _,
                 rhs: _,
                 location,
-            } => location.clone(),
+            } => *location,
             AstNode::Unary {
                 op: _,
                 expr: _,
                 location,
-            } => location.clone(),
+            } => *location,
             AstNode::If {
                 condition: _,
                 if_body: _,
