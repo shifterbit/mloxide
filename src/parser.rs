@@ -191,17 +191,17 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         return AstNode::Error(SourceLocation::new(start, end));
     }
     lexer.next();
-
+    let start_cond = lexer.peek().source_location().start;
     let condition = expression(lexer, errors);
-    let expr_loc = lexer.peek().source_location();
+    let end_cond = lexer.peek().source_location().end;
     if let AstNode::Error(_) = condition {
-        let end = expr_loc.end;
+        let end = end_cond;
         let error_val = ParseError::new(
             "expected expression after if",
             lexer.previous().source_location(),
         );
         errors.push(error_val);
-        return AstNode::Error(SourceLocation::new(if_loc.start, end));
+        return AstNode::Error(SourceLocation::new(start_cond, end));
     }
 
     let then_tok = lexer.peek();
@@ -255,7 +255,6 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
 
 fn equality(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let start = lexer.peek().source_location().start;
-
     let lhs = term(lexer, errors);
 
     let token = lexer.peek();
@@ -263,7 +262,7 @@ fn equality(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         TokenType::EqualEqual | TokenType::NotEqual => {
             lexer.next();
             let rhs = equality(lexer, errors);
-            let end = lexer.peek().source_location().end;
+            let end = lexer.previous().source_location().end;
 
             AstNode::Binary {
                 op: get_operator(token.token_type),
@@ -285,7 +284,7 @@ fn term(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         TokenType::Minus | TokenType::Plus => {
             lexer.next();
             let rhs = term(lexer, errors);
-            let end = lexer.peek().source_location().end;
+            let end = lexer.previous().source_location().end;
 
             AstNode::Binary {
                 op: get_operator(token.token_type),
@@ -307,7 +306,7 @@ fn factor(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         TokenType::ForwardSlash | TokenType::Star => {
             lexer.next();
             let rhs = factor(lexer, errors);
-            let end = lexer.peek().source_location().end;
+            let end = lexer.previous().source_location().end;
             AstNode::Binary {
                 op: get_operator(token.token_type),
                 lhs: Box::new(lhs),
@@ -324,8 +323,9 @@ fn unary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let start = token.source_location().start;
     match token.token_type {
         TokenType::Negation => {
+            lexer.next();
             let expr = unary(lexer, errors);
-            let end = lexer.peek().source_location().end;
+            let end = lexer.previous().source_location().end;
 
             AstNode::Unary {
                 op: get_operator(token.token_type),
