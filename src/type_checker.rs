@@ -1,6 +1,6 @@
 use crate::{
     ast::{AstNode, Operator, Type, TypedAstNode},
-    name_resolution::SymbolTable, source_location::SourcePosition,
+    name_resolution::SymbolTable
 };
 
 
