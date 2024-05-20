@@ -249,7 +249,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         condition: Box::new(condition),
         if_body: Box::new(if_body),
         else_body: Box::new(else_body),
-        location: SourceLocation::new(if_loc.start, else_body_end),
+        location: SourceLocation::new(if_loc.start, lexer.peek().source_location().end),
     }
 }
 

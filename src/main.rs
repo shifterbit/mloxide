@@ -5,9 +5,9 @@ use parser::parse;
 use crate::{
     ast::AstNode,
     error_reporting::errors_from_file,
-  //  interpreter::{eval_expression, Value},
+    //  interpreter::{eval_expression, Value},
     name_resolution::{resolve_symbols, SymbolTable},
-    type_checker::{check_types},
+    type_checker::check_types,
 };
 mod ast;
 mod error_reporting;
@@ -33,10 +33,13 @@ fn main() {
             resolve_symbols(a.clone(), &mut symtable);
             println!("SymbolTable:\n {:#?}", symtable);
             let tast = check_types(a.clone(), &symtable);
-            println!("Typed AST:\n {:#?}", tast);
-           //  let mut value_table: SymbolTable<Value> = SymbolTable::new();
-           //  let eval = eval_expression(tast, &mut value_table);
-           //  println!("{:?}", eval);
+            match tast {
+                Ok(_) => println!("Everything okay with types!"),
+                Err(errors) => errors_from_file(path, &text, errors),
+            }
+            //  let mut value_table: SymbolTable<Value> = SymbolTable::new();
+            //  let eval = eval_expression(tast, &mut value_table);
+            //  println!("{:?}", eval);
         }
         Err(e) => {
             errors_from_file(path, &text, e);
