@@ -1,7 +1,7 @@
 use crate::ast::{AstNode, Operator};
 use crate::lexer::Lexer;
 use crate::source_location::{SourceLocation, SourcePosition};
-use crate::token::{Token, TokenType};
+use crate::token::TokenType;
 use std::fmt::{self, Display};
 
 pub type ParseErrorList = Vec<ParseError>;
@@ -182,11 +182,9 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         return AstNode::Error(SourceLocation::new(start, end));
     }
 
-    let cond_loc = lexer.next().source_location();
     let condition = expression(lexer, errors);
     let expr_loc = lexer.peek().source_location();
     if let AstNode::Error(_) = condition {
-        let start = cond_loc.start;
         let end = expr_loc.end;
         let error_val = ParseError::new(
             "expected expression after if",
@@ -340,7 +338,6 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         TokenType::LeftParen => {
             let start = tok_location.start;
             let expr = expression(lexer, errors);
-            let mut expr_location = expr.source_location();
             let closing_paren = lexer.peek();
             let end = closing_paren.source_location().end;
 
