@@ -1,4 +1,5 @@
 use crate::ast::{AstNode, Operator};
+use crate::error_reporting::CompilerError;
 use crate::lexer::Lexer;
 use crate::source_location::{SourceLocation, SourcePosition};
 use crate::token::TokenType;
@@ -9,15 +10,24 @@ pub type ParseErrorList = Vec<ParseError>;
 #[derive(Debug, Clone)]
 pub struct ParseError {
     message: String,
-    pub location: SourceLocation,
+    location: SourceLocation,
 }
 
-impl ParseError {
+impl CompilerError for ParseError {
     fn new(message: &str, location: SourceLocation) -> ParseError {
         ParseError {
             message: message.to_string(),
             location,
         }
+    }
+    fn location(&self) -> SourceLocation {
+        self.location
+    }
+    fn message(&self) -> &str {
+        &self.message
+    }
+    fn error_type(&self) -> &str {
+        "ParseError"
     }
 }
 

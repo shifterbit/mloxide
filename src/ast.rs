@@ -1,3 +1,5 @@
+use std::fmt::{self, Display};
+
 use crate::source_location::{SourceLocation, SourcePosition};
 
 #[derive(Debug, Clone, Copy)]
@@ -9,6 +11,21 @@ pub enum Operator {
     Multiply,
     Equal,
     NotEqual,
+}
+
+impl Display for Operator {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Operator::Add => write!(f, "+"),
+            Operator::Subtract => write!(f, "-"),
+            Operator::Negate => write!(f, "~"),
+            Operator::Divide => write!(f, "/"),
+            Operator::Multiply => write!(f, "*"),
+            Operator::Equal => write!(f, "=="),
+            Operator::NotEqual => write!(f, "!="),
+
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -86,7 +103,28 @@ pub enum Type {
     Float,
     Bool,
     Declarations(Vec<Type>),
+    Unit,
     Unknown,
+}
+
+impl Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Type::Int => write!(f, "Int"),
+            Type::Float => write!(f, "Float"),
+            Type::Bool => write!(f, "Bool"),
+            Type::Unit => write!(f, "()"),
+            Type::Unknown => write!(f, "Unknown"),
+            Type::Declarations(declarations) => {
+                let mut msg = "[".to_string();
+                for decl in declarations {
+                    msg.push_str(&(" ".to_string() + &decl.to_string()));
+                }
+                msg.push_str(" ]");
+                write!(f, "{}", msg)
+            }
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
