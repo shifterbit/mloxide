@@ -35,6 +35,12 @@ if (2 + 2) == 4
 then 2 
 else 9
 ```
+### Variables
+```sml
+val x = 2
+val y = 10
+y + x
+```
 
 ## Features
 - [x] Ints
