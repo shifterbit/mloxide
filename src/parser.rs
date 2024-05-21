@@ -11,13 +11,19 @@ pub type ParseErrorList = Vec<ParseError>;
 pub struct ParseError {
     message: String,
     location: SourceLocation,
+    additional_messages: Option<Vec<(String, SourceLocation)>>,
 }
 
 impl CompilerError for ParseError {
-    fn new(message: &str, location: SourceLocation) -> ParseError {
+    fn new(
+        message: &str,
+        location: SourceLocation,
+        additional_messages: Option<Vec<(String, SourceLocation)>>,
+    ) -> ParseError {
         ParseError {
             message: message.to_string(),
             location,
+            additional_messages,
         }
     }
     fn location(&self) -> SourceLocation {
@@ -28,6 +34,9 @@ impl CompilerError for ParseError {
     }
     fn error_type(&self) -> &str {
         "SyntaxError"
+    }
+    fn additional_messages(&self) -> Option<Vec<(String, SourceLocation)>> {
+        self.additional_messages.clone()
     }
 }
 
@@ -109,7 +118,11 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
     if val_tok.token_type != TokenType::Val {
         let location = val_tok_loc;
 
-        let error_val = ParseError::new("variable declarations should start with 'val'", location);
+        let error_val = ParseError::new(
+            "variable declarations should start with 'val'",
+            location,
+            None,
+        );
         errors.push(error_val);
         return ASTNode::Error(location);
     }
@@ -119,7 +132,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
         TokenType::Identifier(name) => name,
         _ => {
             let location = lexer.previous().source_location();
-            let error_val = ParseError::new("expected identifier after val", location);
+            let error_val = ParseError::new("expected identifier after val", location, None);
             errors.push(error_val);
             return ASTNode::Error(location);
         }
@@ -129,7 +142,11 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
     let eq_tok = lexer.peek();
     if eq_tok.token_type != TokenType::Equal {
         let location = lexer.previous().source_location();
-        let error_val = ParseError::new(&format!("'=' expected after {variable_name}"), location);
+        let error_val = ParseError::new(
+            &format!("'=' expected after {variable_name}"),
+            location,
+            None,
+        );
         errors.push(error_val);
         return ASTNode::Error(location);
     }
@@ -137,7 +154,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
 
     if [TokenType::Eof, TokenType::Val, TokenType::Semicolon].contains(&lexer.peek().token_type) {
         let location = lexer.previous().source_location();
-        let error_val = ParseError::new("Expect expression after =", location);
+        let error_val = ParseError::new("Expect expression after =", location, None);
         errors.push(error_val);
         return ASTNode::Error(location);
     }
@@ -147,7 +164,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
     let semicolon_tok = lexer.peek();
     if semicolon_tok.token_type != TokenType::Semicolon {
         let location = lexer.previous().source_location();
-        let error_val = ParseError::new("expected ';' after variable declaration", location);
+        let error_val = ParseError::new("expected ';' after variable declaration", location, None);
         errors.push(error_val);
         return ASTNode::Error(location);
     }
@@ -166,7 +183,11 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     if if_tok.token_type != TokenType::If {
         let start = if_loc.start;
         let end = if_loc.end;
-        let error_val = ParseError::new("expected token if", lexer.previous().source_location());
+        let error_val = ParseError::new(
+            "expected token if",
+            lexer.previous().source_location(),
+            None,
+        );
         errors.push(error_val);
         return ASTNode::Error(SourceLocation::new(start, end));
     }
@@ -179,6 +200,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
         let error_val = ParseError::new(
             "expected expression after if",
             lexer.previous().source_location(),
+            None,
         );
         errors.push(error_val);
         return ASTNode::Error(SourceLocation::new(start_cond, end));
@@ -187,7 +209,11 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     let then_tok = lexer.peek();
     let then_loc = then_tok.source_location();
     if then_tok.token_type != TokenType::Then {
-        let error_val = ParseError::new("expected token then", lexer.previous().source_location());
+        let error_val = ParseError::new(
+            "expected token then",
+            lexer.previous().source_location(),
+            None,
+        );
         errors.push(error_val);
         return ASTNode::Error(then_loc);
     }
@@ -199,6 +225,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
         let error_val = ParseError::new(
             "expected expression after then",
             lexer.previous().source_location(),
+            None,
         );
         errors.push(error_val);
         return ASTNode::Error(SourceLocation::new(if_body_start, if_body_end));
@@ -207,7 +234,11 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     let else_tok = lexer.peek();
     let else_loc = else_tok.source_location();
     if else_tok.token_type != TokenType::Else {
-        let error_val = ParseError::new("expected token else", lexer.previous().source_location());
+        let error_val = ParseError::new(
+            "expected token else",
+            lexer.previous().source_location(),
+            None,
+        );
         errors.push(error_val);
         return ASTNode::Error(else_loc);
     }
@@ -220,6 +251,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
         let error_val = ParseError::new(
             "expected expression after else",
             lexer.previous().source_location(),
+            None,
         );
         errors.push(error_val);
         return ASTNode::Error(SourceLocation::new(else_body_start, else_body_end));
@@ -338,6 +370,7 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
                 let error = ParseError::new(
                     "Expected closing parenthesis",
                     lexer.peek().source_location(),
+                    None,
                 );
                 errors.push(error);
                 ASTNode::Error(SourceLocation::new(start, end))
@@ -348,6 +381,7 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
             let error = ParseError::new(
                 &format!("unexpected token {literal}"),
                 lexer.previous().source_location(),
+                None,
             );
             errors.push(error);
             ASTNode::Error(tok_location)

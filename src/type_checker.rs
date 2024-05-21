@@ -3,8 +3,8 @@ use std::fmt::{self, Display};
 use crate::{
     ast::{ASTNode, Operator, Type, TypedASTNode},
     error_reporting::CompilerError,
-    symbol_table::SymbolTable,
     source_location::{SourceLocation, SourcePosition},
+    symbol_table::SymbolTable,
 };
 
 pub type TypeErrorList = Vec<TypeError>;
@@ -12,13 +12,19 @@ pub type TypeErrorList = Vec<TypeError>;
 pub struct TypeError {
     message: String,
     location: SourceLocation,
+    additional_messages: Option<Vec<(String, SourceLocation)>>,
 }
 
 impl CompilerError for TypeError {
-    fn new(message: &str, location: SourceLocation) -> TypeError {
+    fn new(
+        message: &str,
+        location: SourceLocation,
+        additional_messages: Option<Vec<(String, SourceLocation)>>,
+    ) -> TypeError {
         TypeError {
             message: message.to_string(),
             location,
+            additional_messages,
         }
     }
 
@@ -32,6 +38,10 @@ impl CompilerError for TypeError {
 
     fn error_type(&self) -> &str {
         "TypeError"
+    }
+
+    fn additional_messages(&self) -> Option<Vec<(String, SourceLocation)>> {
+        self.additional_messages.clone()
     }
 }
 
@@ -112,6 +122,7 @@ pub fn typecheck(
                         "expected {l_expected} {op} {r_expected} \n got {l_type} {op} {r_type}"
                     ),
                     location,
+                    None,
                 );
                 errors.push(error);
                 Type::Unknown
@@ -140,6 +151,7 @@ pub fn typecheck(
                 let error = TypeError::new(
                     &format!("value of type {e_type} cannot be used with operator {op}, expected one of: {types_str}"),
                     location,
+                    None
                 );
                 errors.push(error);
                 node_type = Type::Unknown;
@@ -164,6 +176,7 @@ pub fn typecheck(
                 let error = TypeError::new(
                     "expected a boolean value for the if condition",
                     condition_typed.source_location(),
+                    None,
                 );
                 errors.push(error);
             }
@@ -173,8 +186,11 @@ pub fn typecheck(
             let full_type = if if_body_typed.get_type() == else_body_typed.get_type() {
                 if_body_typed.get_type()
             } else {
-                let error =
-                    TypeError::new("return types of if and else blocks should match", location);
+                let error = TypeError::new(
+                    "return types of if and else blocks should match",
+                    location,
+                    None,
+                );
                 errors.push(error);
                 Type::Unknown
             };
