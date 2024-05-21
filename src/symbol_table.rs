@@ -1,5 +1,4 @@
-
-use std::{collections::HashMap};
+use std::collections::HashMap;
 
 use crate::ast::AstNode;
 
@@ -7,6 +6,15 @@ use crate::ast::AstNode;
 pub struct SymbolTable<T> {
     curr: HashMap<String, T>,
     prev: Option<Box<SymbolTable<T>>>,
+}
+
+impl<T> Default for SymbolTable<T>
+where
+    T: Clone,
+{
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T> SymbolTable<T>
