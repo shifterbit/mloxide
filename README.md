@@ -2,11 +2,26 @@
 An ML derivative written in rust.
 
 ## Building and Running
+### Clone the Repository
 ```bash
 git clone https://github.com/shifterbit/mloxide.git
 cd mloxide
-cargo build
-./target/debug/mloxide <source-file>
+```
+
+### Building with Cargo
+```bash
+cargo build --release # omit --release for debug build
+./target/release/mloxide <path to source fille> # ./target/debug/mloxide for debug builds
+```
+
+### Building with Nix
+[Install Nix](https://nixos.org/download/)
+
+[Make sure flakes are enabled](https://nixos.wiki/wiki/Flakes)
+
+```bash
+nix build
+./result/bin/mloxide <path to source file>
 ```
 
 ## Example Code
