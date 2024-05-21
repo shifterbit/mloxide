@@ -6,14 +6,14 @@ use crate::{
     ast::AstNode,
     error_reporting::errors_from_file,
     //  interpreter::{eval_expression, Value},
-    name_resolution::{resolve_symbols, SymbolTable},
+    symbol_table::{resolve_symbols, SymbolTable},
     type_checker::check_types,
 };
 mod ast;
 mod error_reporting;
 mod interpreter;
 mod lexer;
-mod name_resolution;
+mod symbol_table;
 mod parser;
 mod source_location;
 mod token;

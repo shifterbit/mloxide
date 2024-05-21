@@ -3,7 +3,7 @@ use std::fmt::{self, Display};
 use crate::{
     ast::{AstNode, Operator, Type, TypedAstNode},
     error_reporting::CompilerError,
-    name_resolution::SymbolTable,
+    symbol_table::SymbolTable,
     source_location::{SourceLocation, SourcePosition},
 };
 

@@ -1,6 +1,6 @@
 use std::{fmt::{self, Display}};
 
-use crate::{ast::{Operator, TypedAstNode}, name_resolution::SymbolTable};
+use crate::{ast::{Operator, TypedAstNode}, symbol_table::SymbolTable};
 
 #[derive(Debug, Clone)]
 pub enum Value {
