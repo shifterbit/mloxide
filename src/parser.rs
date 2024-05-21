@@ -49,7 +49,7 @@ fn recover_from_error(lexer: &mut Lexer) {
                 break;
             }
             _ => {
-                lexer.next();
+                lexer.consume();
             }
         }
     }
@@ -104,7 +104,7 @@ fn declarations(
 }
 
 fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
-    let val_tok = lexer.next();
+    let val_tok = lexer.consume();
     let val_tok_loc = val_tok.source_location();
     if val_tok.token_type != TokenType::Val {
         let location = val_tok_loc;
@@ -124,7 +124,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstN
             return AstNode::Error(location);
         }
     };
-    lexer.next();
+    lexer.consume();
 
     let eq_tok = lexer.peek();
     if eq_tok.token_type != TokenType::Equal {
@@ -133,7 +133,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstN
         errors.push(error_val);
         return AstNode::Error(location);
     }
-    lexer.next();
+    lexer.consume();
 
     if [TokenType::Eof, TokenType::Val, TokenType::Semicolon].contains(&lexer.peek().token_type) {
         let location = lexer.previous().source_location();
@@ -151,7 +151,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstN
         errors.push(error_val);
         return AstNode::Error(location);
     }
-    let semicolon_loc = lexer.next().source_location();
+    let semicolon_loc = lexer.consume().source_location();
     let location = SourceLocation::new(val_tok_loc.start, semicolon_loc.end);
     AstNode::VariableDeclaration {
         variable: variable_name,
@@ -170,7 +170,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         errors.push(error_val);
         return AstNode::Error(SourceLocation::new(start, end));
     }
-    lexer.next();
+    lexer.consume();
     let start_cond = lexer.peek().source_location().start;
     let condition = expression(lexer, errors);
     let end_cond = lexer.peek().source_location().end;
@@ -192,7 +192,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         return AstNode::Error(then_loc);
     }
 
-    let if_body_start = lexer.next().source_location().start;
+    let if_body_start = lexer.consume().source_location().start;
     let if_body = expression(lexer, errors);
     if let AstNode::Error(_) = if_body {
         let if_body_end = lexer.peek().source_location().end;
@@ -212,7 +212,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
         return AstNode::Error(else_loc);
     }
 
-    let else_body_loc = lexer.next().source_location();
+    let else_body_loc = lexer.consume().source_location();
     let else_body = expression(lexer, errors);
     let else_body_start = else_body_loc.start;
     let else_body_end = else_body_loc.end;
@@ -240,7 +240,7 @@ fn equality(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let token = lexer.peek();
     match token.token_type {
         TokenType::EqualEqual | TokenType::NotEqual => {
-            lexer.next();
+            lexer.consume();
             let rhs = equality(lexer, errors);
             let end = lexer.previous().source_location().end;
 
@@ -262,7 +262,7 @@ fn term(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let token = lexer.peek();
     match token.token_type {
         TokenType::Minus | TokenType::Plus => {
-            lexer.next();
+            lexer.consume();
             let rhs = term(lexer, errors);
             let end = lexer.previous().source_location().end;
 
@@ -284,7 +284,7 @@ fn factor(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let token = lexer.peek();
     match token.token_type {
         TokenType::ForwardSlash | TokenType::Star => {
-            lexer.next();
+            lexer.consume();
             let rhs = factor(lexer, errors);
             let end = lexer.previous().source_location().end;
             AstNode::Binary {
@@ -303,7 +303,7 @@ fn unary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
     let start = token.source_location().start;
     match token.token_type {
         TokenType::Negation => {
-            lexer.next();
+            lexer.consume();
             let expr = unary(lexer, errors);
             let end = lexer.previous().source_location().end;
 
@@ -318,7 +318,7 @@ fn unary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
 }
 
 fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
-    let token = lexer.next();
+    let token = lexer.consume();
     let tok_location = token.source_location();
     match token.token_type {
         TokenType::Int(n) => AstNode::Int(n, tok_location),
@@ -332,7 +332,7 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> AstNode {
             let end = closing_paren.source_location().end;
 
             if closing_paren.token_type == TokenType::RightParen {
-                lexer.next();
+                lexer.consume();
                 AstNode::Grouping(Box::new(expr), SourceLocation::new(start, end))
             } else {
                 let error = ParseError::new(

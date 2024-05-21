@@ -79,7 +79,7 @@ impl Lexer {
     pub fn previous(&self) -> Token {
         self.tokens[self.position - 1].clone()
     }
-    pub fn next(&mut self) -> Token {
+    pub fn consume(&mut self) -> Token {
         if self.position < self.tokens.len() {
             let tok = self.tokens[self.position].clone();
             self.position += 1;
