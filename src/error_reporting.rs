@@ -23,7 +23,9 @@ pub fn errors_from_file(filename: &str, text: &str, errors: Vec<impl CompilerErr
         let diagnostic: Diagnostic<()> = Diagnostic::error()
             .with_message(error.message())
             .with_code(error.error_type())
-            .with_labels(vec![Label::primary((), start..end)]);
+            .with_labels(vec![
+                Label::primary((), start..end).with_message(error.message())
+            ]);
 
         let _emit = term::emit(&mut writer.lock(), &config, &file, &diagnostic);
     }
