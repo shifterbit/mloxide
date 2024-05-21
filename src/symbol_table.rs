@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::ast::AstNode;
+use crate::ast::ASTNode;
 
 #[derive(Debug, Clone)]
 pub struct SymbolTable<T> {
@@ -49,24 +49,24 @@ where
     }
 }
 
-pub fn resolve_symbols(ast: AstNode, symbol_table: &mut SymbolTable<AstNode>) {
+pub fn resolve_symbols(ast: ASTNode, symbol_table: &mut SymbolTable<ASTNode>) {
     match ast {
-        AstNode::Declarations(nodes, _) => {
+        ASTNode::Declarations(nodes, _) => {
             for node in nodes {
                 resolve_symbols(node, symbol_table)
             }
         }
-        AstNode::VariableDeclaration {
+        ASTNode::VariableDeclaration {
             variable,
             value,
             location: _,
         } => {
             symbol_table.insert(&variable, *value);
         }
-        AstNode::Int(_, _)
-        | AstNode::Float(_, _)
-        | AstNode::Bool(_, _)
-        | AstNode::Identifier(_, _) => {}
+        ASTNode::Int(_, _)
+        | ASTNode::Float(_, _)
+        | ASTNode::Bool(_, _)
+        | ASTNode::Identifier(_, _) => {}
         _ => {}
     }
 }

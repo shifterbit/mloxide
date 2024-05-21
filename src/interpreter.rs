@@ -1,6 +1,6 @@
 use std::{fmt::{self, Display}};
 
-use crate::{ast::{Operator, TypedAstNode}, symbol_table::SymbolTable};
+use crate::{ast::{Operator, TypedASTNode}, symbol_table::SymbolTable};
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -21,44 +21,44 @@ impl Display for Value {
     }
 }
 
-pub fn eval_expression(ast: TypedAstNode, symbol_table: &mut SymbolTable<Value>) -> Value {
+pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>) -> Value {
     match ast {
-        TypedAstNode::Int(n, _) => Value::Int(n),
-        TypedAstNode::Float(n, _) => Value::Float(n),
-        TypedAstNode::Bool(b, _) => Value::Bool(b),
-        TypedAstNode::Identifier { name, node_type: _, location: _ } => {
+        TypedASTNode::Int(n, _) => Value::Int(n),
+        TypedASTNode::Float(n, _) => Value::Float(n),
+        TypedASTNode::Bool(b, _) => Value::Bool(b),
+        TypedASTNode::Identifier { name, node_type: _, location: _ } => {
             match symbol_table.lookup(&name) {
                 Some(v) =>  v,
                 None => panic!("Variable does not exist")
             }
         },
-        TypedAstNode::Grouping { expr, node_type: _, location: _ } => eval_expression(*expr, symbol_table),
-        TypedAstNode::Binary {
+        TypedASTNode::Grouping { expr, node_type: _, location: _ } => eval_expression(*expr, symbol_table),
+        TypedASTNode::Binary {
             node_type: _,
             op,
             lhs,
             rhs,
             location: _
         } => eval_binary(op, *lhs, *rhs, symbol_table),
-        TypedAstNode::Unary {
+        TypedASTNode::Unary {
             node_type: _,
             op,
             expr,
             location: _,
         } => eval_unary(op, *expr, symbol_table),
-        TypedAstNode::If {
+        TypedASTNode::If {
             node_type: _,
             condition,
             if_body,
             else_body,
             location: _
         } => eval_if_expression(*condition, *if_body, *else_body, symbol_table),
-        TypedAstNode::VariableDeclaration { variable, value, node_type: _, location: _ } => {
+        TypedASTNode::VariableDeclaration { variable, value, node_type: _, location: _ } => {
             let val = eval_expression(*value, symbol_table);
             symbol_table.insert(&variable, val);
             Value::Unit
         },
-        TypedAstNode::Declarations{ declarations, node_type: _, location: _ } => {
+        TypedASTNode::Declarations{ declarations, node_type: _, location: _ } => {
             let mut values: Vec<Value> = Vec::new();
             for declaration in declarations {
                 let value = eval_expression(declaration, symbol_table);
@@ -66,16 +66,16 @@ pub fn eval_expression(ast: TypedAstNode, symbol_table: &mut SymbolTable<Value>)
             }
             values.last().unwrap().clone()
         }
-        TypedAstNode::Error(_) => {
+        TypedASTNode::Error(_) => {
             panic!("This should not happen");
         }
     }
 }
 
 fn eval_if_expression(
-    condition: TypedAstNode,
-    if_body: TypedAstNode,
-    else_body: TypedAstNode,
+    condition: TypedASTNode,
+    if_body: TypedASTNode,
+    else_body: TypedASTNode,
     symbol_table: &mut SymbolTable<Value>
 ) -> Value {
     let condition = eval_expression(condition, symbol_table);
@@ -86,7 +86,7 @@ fn eval_if_expression(
     }
 }
 
-fn eval_binary(op: Operator, left: TypedAstNode, right: TypedAstNode, symbol_table: &mut SymbolTable<Value>) -> Value {
+fn eval_binary(op: Operator, left: TypedASTNode, right: TypedASTNode, symbol_table: &mut SymbolTable<Value>) -> Value {
     let lhs = eval_expression(left, symbol_table);
     let rhs = eval_expression(right, symbol_table);
 
@@ -128,7 +128,7 @@ fn eval_binary(op: Operator, left: TypedAstNode, right: TypedAstNode, symbol_tab
     }
 }
 
-fn eval_unary(op: Operator, right: TypedAstNode, symbol_table: &mut SymbolTable<Value>) -> Value {
+fn eval_unary(op: Operator, right: TypedASTNode, symbol_table: &mut SymbolTable<Value>) -> Value {
     let expr = eval_expression(right, symbol_table);
 
     match op {

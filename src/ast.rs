@@ -29,65 +29,65 @@ impl Display for Operator {
 }
 
 #[derive(Debug, Clone)]
-pub enum AstNode {
+pub enum ASTNode {
     Error(SourceLocation),
     Int(i64, SourceLocation),
     Float(f64, SourceLocation),
     Bool(bool, SourceLocation),
     Identifier(String, SourceLocation),
-    Grouping(Box<AstNode>, SourceLocation),
-    Declarations(Vec<AstNode>, SourceLocation),
+    Grouping(Box<ASTNode>, SourceLocation),
+    Declarations(Vec<ASTNode>, SourceLocation),
     VariableDeclaration {
         variable: String,
-        value: Box<AstNode>,
+        value: Box<ASTNode>,
         location: SourceLocation,
     },
     Binary {
         op: Operator,
-        lhs: Box<AstNode>,
-        rhs: Box<AstNode>,
+        lhs: Box<ASTNode>,
+        rhs: Box<ASTNode>,
         location: SourceLocation,
     },
     Unary {
         op: Operator,
-        expr: Box<AstNode>,
+        expr: Box<ASTNode>,
         location: SourceLocation,
     },
     If {
-        condition: Box<AstNode>,
-        if_body: Box<AstNode>,
-        else_body: Box<AstNode>,
+        condition: Box<ASTNode>,
+        if_body: Box<ASTNode>,
+        else_body: Box<ASTNode>,
         location: SourceLocation,
     },
 }
 
-impl SourcePosition for AstNode {
+impl SourcePosition for ASTNode {
     fn source_location(&self) -> SourceLocation {
         match self {
-            AstNode::Error(location) => *location,
-            AstNode::Int(_, location) => *location,
-            AstNode::Float(_, location) => *location,
-            AstNode::Bool(_, location) => *location,
-            AstNode::Identifier(_, location) => *location,
-            AstNode::Grouping(_, location) => *location,
-            AstNode::Declarations(_, location) => *location,
-            AstNode::VariableDeclaration {
+            ASTNode::Error(location) => *location,
+            ASTNode::Int(_, location) => *location,
+            ASTNode::Float(_, location) => *location,
+            ASTNode::Bool(_, location) => *location,
+            ASTNode::Identifier(_, location) => *location,
+            ASTNode::Grouping(_, location) => *location,
+            ASTNode::Declarations(_, location) => *location,
+            ASTNode::VariableDeclaration {
                 variable: _,
                 value: _,
                 location,
             } => *location,
-            AstNode::Binary {
+            ASTNode::Binary {
                 op: _,
                 lhs: _,
                 rhs: _,
                 location,
             } => *location,
-            AstNode::Unary {
+            ASTNode::Unary {
                 op: _,
                 expr: _,
                 location,
             } => *location,
-            AstNode::If {
+            ASTNode::If {
                 condition: _,
                 if_body: _,
                 else_body: _,
@@ -128,7 +128,7 @@ impl Display for Type {
 }
 
 #[derive(Clone, Debug)]
-pub enum TypedAstNode {
+pub enum TypedASTNode {
     Error(SourceLocation),
     Int(i64, SourceLocation),
     Float(f64, SourceLocation),
@@ -139,18 +139,18 @@ pub enum TypedAstNode {
         location: SourceLocation,
     },
     Grouping {
-        expr: Box<TypedAstNode>,
+        expr: Box<TypedASTNode>,
         node_type: Type,
         location: SourceLocation,
     },
     Declarations {
-        declarations: Vec<TypedAstNode>,
+        declarations: Vec<TypedASTNode>,
         node_type: Type,
         location: SourceLocation,
     },
     VariableDeclaration {
         variable: String,
-        value: Box<TypedAstNode>,
+        value: Box<TypedASTNode>,
         node_type: Type,
         location: SourceLocation,
     },
@@ -158,68 +158,68 @@ pub enum TypedAstNode {
     Binary {
         node_type: Type,
         op: Operator,
-        lhs: Box<TypedAstNode>,
-        rhs: Box<TypedAstNode>,
+        lhs: Box<TypedASTNode>,
+        rhs: Box<TypedASTNode>,
         location: SourceLocation,
     },
     Unary {
         node_type: Type,
         op: Operator,
-        expr: Box<TypedAstNode>,
+        expr: Box<TypedASTNode>,
         location: SourceLocation,
     },
 
     If {
         node_type: Type,
-        condition: Box<TypedAstNode>,
-        if_body: Box<TypedAstNode>,
-        else_body: Box<TypedAstNode>,
+        condition: Box<TypedASTNode>,
+        if_body: Box<TypedASTNode>,
+        else_body: Box<TypedASTNode>,
         location: SourceLocation,
     },
 }
 
-impl TypedAstNode {
+impl TypedASTNode {
     pub fn get_type(&self) -> Type {
         match self {
-            TypedAstNode::Error(_) => Type::Unknown,
-            TypedAstNode::Int(_, _) => Type::Int,
-            TypedAstNode::Float(_, _) => Type::Float,
-            TypedAstNode::Bool(_, _) => Type::Bool,
-            TypedAstNode::Identifier {
+            TypedASTNode::Error(_) => Type::Unknown,
+            TypedASTNode::Int(_, _) => Type::Int,
+            TypedASTNode::Float(_, _) => Type::Float,
+            TypedASTNode::Bool(_, _) => Type::Bool,
+            TypedASTNode::Identifier {
                 location: _,
                 name: _,
                 node_type: t,
             } => t.clone(),
-            TypedAstNode::VariableDeclaration {
+            TypedASTNode::VariableDeclaration {
                 location: _,
                 variable: _,
                 value: _,
                 node_type: t,
             } => t.clone(),
-            TypedAstNode::Declarations {
+            TypedASTNode::Declarations {
                 location: _,
                 declarations: _,
                 node_type: t,
             } => t.clone(),
-            TypedAstNode::Grouping {
+            TypedASTNode::Grouping {
                 location: _,
                 expr: _,
                 node_type: t,
             } => t.clone(),
-            TypedAstNode::Unary {
+            TypedASTNode::Unary {
                 location: _,
                 node_type: t,
                 op: _,
                 expr: _,
             } => t.clone(),
-            TypedAstNode::Binary {
+            TypedASTNode::Binary {
                 location: _,
                 node_type: t,
                 op: _,
                 lhs: _,
                 rhs: _,
             } => t.clone(),
-            TypedAstNode::If {
+            TypedASTNode::If {
                 location: _,
                 node_type: t,
                 condition: _,
@@ -230,48 +230,48 @@ impl TypedAstNode {
     }
 }
 
-impl SourcePosition for TypedAstNode {
+impl SourcePosition for TypedASTNode {
     fn source_location(&self) -> SourceLocation {
         match self {
-            TypedAstNode::Error(location) => *location,
-            TypedAstNode::Int(_, location) => *location,
-            TypedAstNode::Float(_, location) => *location,
-            TypedAstNode::Bool(_, location) => *location,
-            TypedAstNode::Identifier {
+            TypedASTNode::Error(location) => *location,
+            TypedASTNode::Int(_, location) => *location,
+            TypedASTNode::Float(_, location) => *location,
+            TypedASTNode::Bool(_, location) => *location,
+            TypedASTNode::Identifier {
                 name: _,
                 node_type: _,
                 location,
             } => *location,
-            TypedAstNode::Grouping {
+            TypedASTNode::Grouping {
                 expr: _,
                 node_type: _,
                 location,
             } => *location,
-            TypedAstNode::Declarations {
+            TypedASTNode::Declarations {
                 node_type: _,
                 declarations: _,
                 location,
             } => *location,
-            TypedAstNode::VariableDeclaration {
+            TypedASTNode::VariableDeclaration {
                 node_type: _,
                 variable: _,
                 value: _,
                 location,
             } => *location,
-            TypedAstNode::Binary {
+            TypedASTNode::Binary {
                 node_type: _,
                 op: _,
                 lhs: _,
                 rhs: _,
                 location,
             } => *location,
-            TypedAstNode::Unary {
+            TypedASTNode::Unary {
                 node_type: _,
                 op: _,
                 expr: _,
                 location,
             } => *location,
-            TypedAstNode::If {
+            TypedASTNode::If {
                 node_type: _,
                 condition: _,
                 if_body: _,

@@ -1,7 +1,7 @@
 use std::fmt::{self, Display};
 
 use crate::{
-    ast::{AstNode, Operator, Type, TypedAstNode},
+    ast::{ASTNode, Operator, Type, TypedASTNode},
     error_reporting::CompilerError,
     symbol_table::SymbolTable,
     source_location::{SourceLocation, SourcePosition},
@@ -42,9 +42,9 @@ impl Display for TypeError {
 }
 
 pub fn check_types(
-    ast: AstNode,
-    symbol_table: &SymbolTable<AstNode>,
-) -> Result<TypedAstNode, TypeErrorList> {
+    ast: ASTNode,
+    symbol_table: &SymbolTable<ASTNode>,
+) -> Result<TypedASTNode, TypeErrorList> {
     let mut type_table: SymbolTable<Type> = SymbolTable::new();
     let mut errors: TypeErrorList = Vec::new();
     let res = typecheck(ast, symbol_table, &mut type_table, &mut errors);
@@ -56,43 +56,43 @@ pub fn check_types(
 }
 
 pub fn typecheck(
-    node: AstNode,
-    symbol_table: &SymbolTable<AstNode>,
+    node: ASTNode,
+    symbol_table: &SymbolTable<ASTNode>,
     type_table: &mut SymbolTable<Type>,
     errors: &mut TypeErrorList,
-) -> TypedAstNode {
+) -> TypedASTNode {
     match node {
-        AstNode::Error(loc) => TypedAstNode::Error(loc),
-        AstNode::Int(n, loc) => TypedAstNode::Int(n, loc),
-        AstNode::Float(n, loc) => TypedAstNode::Float(n, loc),
-        AstNode::Bool(b, loc) => TypedAstNode::Bool(b, loc),
-        AstNode::Identifier(i, loc) => match &symbol_table.lookup(&i) {
+        ASTNode::Error(loc) => TypedASTNode::Error(loc),
+        ASTNode::Int(n, loc) => TypedASTNode::Int(n, loc),
+        ASTNode::Float(n, loc) => TypedASTNode::Float(n, loc),
+        ASTNode::Bool(b, loc) => TypedASTNode::Bool(b, loc),
+        ASTNode::Identifier(i, loc) => match &symbol_table.lookup(&i) {
             Some(_) => {
                 let expr_type = type_table.lookup(&i).unwrap_or(Type::Unknown);
 
-                TypedAstNode::Identifier {
+                TypedASTNode::Identifier {
                     name: i,
                     node_type: expr_type,
                     location: loc,
                 }
             }
-            None => TypedAstNode::Identifier {
+            None => TypedASTNode::Identifier {
                 name: i,
                 node_type: Type::Unknown,
                 location: loc,
             },
         },
-        AstNode::Grouping(expr, loc) => {
+        ASTNode::Grouping(expr, loc) => {
             let typecheck = typecheck(*expr, symbol_table, type_table, errors);
             let typed_expr = typecheck;
             let expr_type = typed_expr.get_type();
-            TypedAstNode::Grouping {
+            TypedASTNode::Grouping {
                 expr: Box::new(typed_expr),
                 node_type: expr_type,
                 location: loc,
             }
         }
-        AstNode::Binary {
+        ASTNode::Binary {
             op,
             lhs,
             rhs,
@@ -117,7 +117,7 @@ pub fn typecheck(
                 Type::Unknown
             };
 
-            TypedAstNode::Binary {
+            TypedASTNode::Binary {
                 node_type: full_type,
                 op,
                 lhs: Box::new(typed_lhs),
@@ -125,7 +125,7 @@ pub fn typecheck(
                 location,
             }
         }
-        AstNode::Unary { op, expr, location } => {
+        ASTNode::Unary { op, expr, location } => {
             let typed_expr = typecheck(*expr, symbol_table, type_table, errors);
             let e_type = typed_expr.get_type();
             let expected_types = allowed_infix_op_type(op, e_type.clone());
@@ -145,14 +145,14 @@ pub fn typecheck(
                 node_type = Type::Unknown;
             }
 
-            TypedAstNode::Unary {
+            TypedASTNode::Unary {
                 node_type,
                 op,
                 expr: Box::new(typed_expr),
                 location,
             }
         }
-        AstNode::If {
+        ASTNode::If {
             condition,
             if_body,
             else_body,
@@ -179,7 +179,7 @@ pub fn typecheck(
                 Type::Unknown
             };
 
-            TypedAstNode::If {
+            TypedASTNode::If {
                 node_type: full_type,
                 condition: Box::new(condition_typed),
                 if_body: Box::new(if_body_typed),
@@ -187,7 +187,7 @@ pub fn typecheck(
                 location,
             }
         }
-        AstNode::VariableDeclaration {
+        ASTNode::VariableDeclaration {
             variable,
             value,
             location,
@@ -195,15 +195,15 @@ pub fn typecheck(
             let val_node = typecheck(*value.clone(), symbol_table, type_table, errors);
             let val_type = val_node.get_type();
             type_table.insert(&variable, val_type);
-            TypedAstNode::VariableDeclaration {
+            TypedASTNode::VariableDeclaration {
                 variable,
                 value: Box::new(val_node),
                 node_type: Type::Unit,
                 location,
             }
         }
-        AstNode::Declarations(nodes, location) => {
-            let mut declarations: Vec<TypedAstNode> = Vec::new();
+        ASTNode::Declarations(nodes, location) => {
+            let mut declarations: Vec<TypedASTNode> = Vec::new();
             for node in nodes {
                 declarations.push(typecheck(node, symbol_table, type_table, errors));
             }
@@ -212,7 +212,7 @@ pub fn typecheck(
                 .into_iter()
                 .map(|x| x.get_type())
                 .collect();
-            TypedAstNode::Declarations {
+            TypedASTNode::Declarations {
                 declarations,
                 node_type: Type::Declarations(node_types),
                 location,

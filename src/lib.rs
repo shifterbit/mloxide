@@ -1,6 +1,6 @@
 use std::fs;
 
-use ast::AstNode;
+use ast::ASTNode;
 use error_reporting::errors_from_file;
 use interpreter::Value;
 use lexer::Lexer;
@@ -24,7 +24,7 @@ pub fn run(filepath: &str) {
     let ast = parse(&mut lexer);
     match ast {
         Ok(a) => {
-            let mut symbol_table: SymbolTable<AstNode> = SymbolTable::new();
+            let mut symbol_table: SymbolTable<ASTNode> = SymbolTable::new();
             resolve_symbols(a.clone(), &mut symbol_table);
             let typed_ast = check_types(a, &symbol_table);
             match typed_ast {
