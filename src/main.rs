@@ -4,6 +4,10 @@ extern crate mloxide;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let path = &args[1];
-    mloxide::run(path);
+    let name = &args[0];
+    if args.len() < 2 {
+        println!("Usage: {name} <path to file>")
+    } else {
+        mloxide::run(&args[0]);
+    }
 }
