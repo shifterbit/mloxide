@@ -3,6 +3,7 @@
 <declaration> ::= <val_declaration> 
 <expression> ::= <equality> | <if_expression>
 <val_declaration> ::= "val" <wp> "=" <expression> ";"
+<let_expression> ::= "let" <wp> <declarations> <wp> "in" <wp> <expression> <wp> "end"
 <if_expression> ::= "if" <wp> <expression> <wp> "then" <wp> <expression> <wp> "else" <wp> <expression>
 <equality> ::= <term> ("==" | "!=") <equality> | <term>
 <term> ::= <factor> ("+" | "-") <term> | <factor>
