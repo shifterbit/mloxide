@@ -123,6 +123,9 @@ fn match_keywords(literal: &str) -> TokenType {
         "then" => TokenType::Then,
         "else" => TokenType::Else,
         "val" => TokenType::Val,
+        "let" => TokenType::Let,
+        "in" => TokenType::In,
+        "end" => TokenType::End,
         _ => TokenType::Identifier(literal.to_owned()),
     }
 }

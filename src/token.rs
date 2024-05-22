@@ -81,6 +81,11 @@ pub enum TokenType {
     // Declarations
     Val,
 
+    // Let Expressions
+    Let,
+    In,
+    End,
+
     // EOF
     Eof,
 }
@@ -107,6 +112,9 @@ impl Display for TokenType {
             TokenType::Then => write!(f, "Then"),
             TokenType::Else => write!(f, "Else"),
             TokenType::Val => write!(f, "Val"),
+            TokenType::Let => write!(f, "Let"),
+            TokenType::In => write!(f, "End"),
+            TokenType::End => write!(f, "End"),
             TokenType::Identifier(i) => write!(f, "Identifier({})", i),
         }
     }
