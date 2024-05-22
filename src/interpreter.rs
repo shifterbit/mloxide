@@ -1,13 +1,16 @@
-use std::{fmt::{self, Display}};
+use std::fmt::{self, Display};
 
-use crate::{ast::{Operator, TypedASTNode}, symbol_table::SymbolTable};
+use crate::{
+    ast::{Operator, TypedASTNode},
+    symbol_table::SymbolTable,
+};
 
 #[derive(Debug, Clone)]
 pub enum Value {
     Int(i64),
     Float(f64),
     Bool(bool),
-    Unit
+    Unit,
 }
 
 impl Display for Value {
@@ -26,19 +29,25 @@ pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>)
         TypedASTNode::Int(n, _) => Value::Int(n),
         TypedASTNode::Float(n, _) => Value::Float(n),
         TypedASTNode::Bool(b, _) => Value::Bool(b),
-        TypedASTNode::Identifier { name, node_type: _, location: _ } => {
-            match symbol_table.lookup(&name) {
-                Some(v) =>  v,
-                None => panic!("Variable does not exist")
-            }
+        TypedASTNode::Identifier {
+            name,
+            node_type: _,
+            location: _,
+        } => match symbol_table.lookup(&name) {
+            Some(v) => v,
+            None => panic!("Variable does not exist"),
         },
-        TypedASTNode::Grouping { expr, node_type: _, location: _ } => eval_expression(*expr, symbol_table),
+        TypedASTNode::Grouping {
+            expr,
+            node_type: _,
+            location: _,
+        } => eval_expression(*expr, symbol_table),
         TypedASTNode::Binary {
             node_type: _,
             op,
             lhs,
             rhs,
-            location: _
+            location: _,
         } => eval_binary(op, *lhs, *rhs, symbol_table),
         TypedASTNode::Unary {
             node_type: _,
@@ -51,14 +60,23 @@ pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>)
             condition,
             if_body,
             else_body,
-            location: _
+            location: _,
         } => eval_if_expression(*condition, *if_body, *else_body, symbol_table),
-        TypedASTNode::VariableDeclaration { variable, value, node_type: _, location: _ } => {
+        TypedASTNode::VariableDeclaration {
+            variable,
+            value,
+            node_type: _,
+            location: _,
+        } => {
             let val = eval_expression(*value, symbol_table);
             symbol_table.insert(&variable, val);
             Value::Unit
-        },
-        TypedASTNode::Declarations{ declarations, node_type: _, location: _ } => {
+        }
+        TypedASTNode::Declarations {
+            declarations,
+            node_type: _,
+            location: _,
+        } => {
             let mut values: Vec<Value> = Vec::new();
             for declaration in declarations {
                 let value = eval_expression(declaration, symbol_table);
@@ -76,7 +94,7 @@ fn eval_if_expression(
     condition: TypedASTNode,
     if_body: TypedASTNode,
     else_body: TypedASTNode,
-    symbol_table: &mut SymbolTable<Value>
+    symbol_table: &mut SymbolTable<Value>,
 ) -> Value {
     let condition = eval_expression(condition, symbol_table);
     match condition {
@@ -86,7 +104,12 @@ fn eval_if_expression(
     }
 }
 
-fn eval_binary(op: Operator, left: TypedASTNode, right: TypedASTNode, symbol_table: &mut SymbolTable<Value>) -> Value {
+fn eval_binary(
+    op: Operator,
+    left: TypedASTNode,
+    right: TypedASTNode,
+    symbol_table: &mut SymbolTable<Value>,
+) -> Value {
     let lhs = eval_expression(left, symbol_table);
     let rhs = eval_expression(right, symbol_table);
 
@@ -136,7 +159,7 @@ fn eval_unary(op: Operator, right: TypedASTNode, symbol_table: &mut SymbolTable<
             Value::Int(n) => Value::Int(-n),
             Value::Float(n) => Value::Float(-n),
             Value::Bool(_b) => panic!("Cannot negate type bool"),
-            Value::Unit => panic!("Cannot negate unit type")
+            Value::Unit => panic!("Cannot negate unit type"),
         },
         _ => panic!("Invalid Unary Operator"),
     }

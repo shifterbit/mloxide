@@ -23,7 +23,6 @@ impl Display for Operator {
             Operator::Multiply => write!(f, "*"),
             Operator::Equal => write!(f, "=="),
             Operator::NotEqual => write!(f, "!="),
-
         }
     }
 }

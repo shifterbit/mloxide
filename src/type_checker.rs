@@ -12,19 +12,22 @@ pub type TypeErrorList = Vec<TypeError>;
 pub struct TypeError {
     message: String,
     location: SourceLocation,
-    additional_messages: Option<Vec<(String, SourceLocation)>>,
+    details: Option<Vec<(String, SourceLocation)>>,
+    explaination: Option<String>,
 }
 
 impl CompilerError for TypeError {
     fn new(
         message: &str,
         location: SourceLocation,
-        additional_messages: Option<Vec<(String, SourceLocation)>>,
+        details: Option<Vec<(String, SourceLocation)>>,
+        explaination: Option<String>,
     ) -> TypeError {
         TypeError {
             message: message.to_string(),
             location,
-            additional_messages,
+            details,
+            explaination,
         }
     }
 
@@ -40,8 +43,11 @@ impl CompilerError for TypeError {
         "TypeError"
     }
 
-    fn additional_messages(&self) -> Option<Vec<(String, SourceLocation)>> {
-        self.additional_messages.clone()
+    fn details(&self) -> Option<Vec<(String, SourceLocation)>> {
+        self.details.clone()
+    }
+    fn explaination(&self) -> Option<String> {
+        self.explaination.clone()
     }
 }
 
@@ -117,12 +123,17 @@ pub fn typecheck(
             let full_type = if (&l_expected, &r_expected) == (&l_type, &r_type) {
                 binary_return_type(op, l_type, r_type)
             } else {
+                let details = Some(vec![
+                    (format!("is of type {l_type}"), typed_lhs.source_location()),
+                    (format!("is of type {r_type}"), typed_rhs.source_location()),
+                ]);
                 let error = TypeError::new(
-                    &format!(
-                        "expected {l_expected} {op} {r_expected} \n got {l_type} {op} {r_type}"
-                    ),
+                    "mismatched types",
                     location,
-                    None,
+                    details,
+                    Some(format!(
+                        "expected {l_expected} {op} {r_expected},  got {l_type} {op} {r_type}"
+                    )),
                 );
                 errors.push(error);
                 Type::Unknown
@@ -148,10 +159,15 @@ pub fn typecheck(
                     types_str.push_str(&display);
                 }
                 types_str = types_str.trim().trim_end_matches(',').to_string();
+                let labels = Some(vec![
+                    (format!("is of type {e_type}"), typed_expr.source_location()),
+                    (format!("expected one of: {types_str}"), location),
+                ]);
                 let error = TypeError::new(
-                    &format!("value of type {e_type} cannot be used with operator {op}, expected one of: {types_str}"),
+                    &format!("value of type {e_type} cannot be used with operator {op}"),
                     location,
-                    None
+                    labels,
+                    None,
                 );
                 errors.push(error);
                 node_type = Type::Unknown;
@@ -177,6 +193,7 @@ pub fn typecheck(
                     "expected a boolean value for the if condition",
                     condition_typed.source_location(),
                     None,
+                    None,
                 );
                 errors.push(error);
             }
@@ -186,10 +203,21 @@ pub fn typecheck(
             let full_type = if if_body_typed.get_type() == else_body_typed.get_type() {
                 if_body_typed.get_type()
             } else {
+                let labels = Some(vec![
+                    (
+                        format!("This expression is of type {}", if_body_typed.get_type()),
+                        if_body_typed.source_location(),
+                    ),
+                    (
+                        format!("This expression is of type {}", else_body_typed.get_type()),
+                        else_body_typed.source_location(),
+                    ),
+                ]);
                 let error = TypeError::new(
-                    "return types of if and else blocks should match",
+                    "mismatched types",
                     location,
-                    None,
+                    labels,
+                    Some("Types of if and else blocks should match".to_string()),
                 );
                 errors.push(error);
                 Type::Unknown

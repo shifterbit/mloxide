@@ -9,12 +9,14 @@ pub trait CompilerError {
     fn new(
         message: &str,
         location: SourceLocation,
-        additional_messages: Option<Vec<(String, SourceLocation)>>,
+        details: Option<Vec<(String, SourceLocation)>>,
+        explaination: Option<String>,
     ) -> Self;
     fn location(&self) -> SourceLocation;
     fn message(&self) -> &str;
     fn error_type(&self) -> &str;
-    fn additional_messages(&self) -> Option<Vec<(String, SourceLocation)>>;
+    fn details(&self) -> Option<Vec<(String, SourceLocation)>>;
+    fn explaination(&self) -> Option<String>;
 }
 
 pub fn errors_from_file(filename: &str, text: &str, errors: Vec<impl CompilerError>) {
@@ -23,21 +25,28 @@ pub fn errors_from_file(filename: &str, text: &str, errors: Vec<impl CompilerErr
 
     let file = SimpleFile::new(filename, text);
     for error in errors {
-        let start = error.location().start;
-        let end = error.location().end;
-        let mut labels = vec![Label::primary((), start..end).with_message(error.message())];
-        if let Some(messages) = error.additional_messages() {
+        let mut labels = vec![];
+        if let Some(messages) = error.details() {
             for (message, location) in messages {
                 let msg_start = location.start;
                 let msg_end = location.end;
-                let label = Label::secondary((), msg_start..msg_end).with_message(message);
+                let label = Label::primary((), msg_start..msg_end).with_message(message);
                 labels.push(label);
             }
+        } else {
+            let start = error.location().start;
+            let end = error.location().end;
+            let label = Label::primary((), start..end).with_message(error.message());
+            labels.push(label);
         }
-        let diagnostic: Diagnostic<()> = Diagnostic::error()
+
+        let mut diagnostic: Diagnostic<()> = Diagnostic::error()
             .with_message(error.message())
             .with_code(error.error_type())
             .with_labels(labels);
+        if let Some(note) = error.explaination() {
+            diagnostic = diagnostic.with_notes(vec![note]);
+        }
 
         let _emit = term::emit(&mut writer.lock(), &config, &file, &diagnostic);
     }

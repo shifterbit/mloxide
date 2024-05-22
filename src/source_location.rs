@@ -1,11 +1,11 @@
 #[derive(Debug, Clone, Copy)]
 pub struct SourceLocation {
     pub start: usize,
-    pub end: usize
+    pub end: usize,
 }
 
 impl SourceLocation {
-    pub fn new( start: usize, end: usize) -> SourceLocation {
+    pub fn new(start: usize, end: usize) -> SourceLocation {
         SourceLocation { start, end }
     }
 }
