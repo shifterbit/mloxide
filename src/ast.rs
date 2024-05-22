@@ -34,7 +34,7 @@ pub enum ASTNode {
     Float(f64, SourceLocation),
     Bool(bool, SourceLocation),
     Identifier(String, SourceLocation),
-    Grouping(Box<ASTNode>, SourceLocation),
+    Grouping(Option<Box<ASTNode>>, SourceLocation),
     Declarations(Vec<ASTNode>, SourceLocation),
     VariableDeclaration {
         variable: String,
@@ -138,7 +138,7 @@ pub enum TypedASTNode {
         location: SourceLocation,
     },
     Grouping {
-        expr: Box<TypedASTNode>,
+        expr: Option<Box<TypedASTNode>>,
         node_type: Type,
         location: SourceLocation,
     },

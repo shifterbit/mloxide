@@ -98,16 +98,21 @@ pub fn typecheck(
                 location: loc,
             },
         },
-        ASTNode::Grouping(expr, loc) => {
-            let typecheck = typecheck(*expr, symbol_table, type_table, errors);
-            let typed_expr = typecheck;
-            let expr_type = typed_expr.get_type();
-            TypedASTNode::Grouping {
-                expr: Box::new(typed_expr),
-                node_type: expr_type,
-                location: loc,
+        ASTNode::Grouping(expr, loc) => match expr {
+            Some(exp) => {
+                let typecheck = typecheck(*exp, symbol_table, type_table, errors);
+                let typed_expr = typecheck;
+                let expr_type = typed_expr.get_type();
+                TypedASTNode::Grouping {
+                    expr: Some(Box::new(typed_expr)),
+                    node_type: expr_type,
+                    location: loc,
+                }
+            },
+            None => {
+                TypedASTNode::Grouping { expr: None, node_type: Type::Unit, location: loc }
             }
-        }
+        },
         ASTNode::Binary {
             op,
             lhs,

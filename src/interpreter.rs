@@ -41,7 +41,10 @@ pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>)
             expr,
             node_type: _,
             location: _,
-        } => eval_expression(*expr, symbol_table),
+        } => match expr {
+            Some(exp) => eval_expression(*exp, symbol_table),
+            None => Value::Unit
+        }
         TypedASTNode::Binary {
             node_type: _,
             op,

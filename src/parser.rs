@@ -378,13 +378,20 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
         TokenType::Identifier(i) => ASTNode::Identifier(i, tok_location),
         TokenType::LeftParen => {
             let start = tok_location.start;
+            if lexer.peek().token_type == TokenType::RightParen {
+                let closing = lexer.consume();
+                return ASTNode::Grouping(
+                    None,
+                    SourceLocation::new(start, closing.source_location().end),
+                );
+            }
             let expr = expression(lexer, errors);
             let closing_paren = lexer.peek();
             let end = closing_paren.source_location().end;
 
             if closing_paren.token_type == TokenType::RightParen {
                 lexer.consume();
-                ASTNode::Grouping(Box::new(expr), SourceLocation::new(start, end))
+                ASTNode::Grouping(Some(Box::new(expr)), SourceLocation::new(start, end))
             } else {
                 let error = ParseError::new(
                     "Expected closing parenthesis",
