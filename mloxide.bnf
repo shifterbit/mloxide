@@ -1,8 +1,8 @@
-<program> ::= <declaration> "\;" | <expression> | <program> | <program> <program>
-
+<program> ::= <declarations> | <declarations> <expression> | <expression>
+<declarations> ::= <declaration> <declarations> | <declaration>
 <declaration> ::= <val_declaration> 
 <expression> ::= <equality> | <if_expression>
-<val_declaration> ::= "val" <wp> "=" <expression> 
+<val_declaration> ::= "val" <wp> "=" <expression> ";"
 <if_expression> ::= "if" <wp> <expression> <wp> "then" <wp> <expression> <wp> "else" <wp> <expression>
 <equality> ::= <term> ("==" | "!=") <equality> | <term>
 <term> ::= <factor> ("+" | "-") <term> | <factor>
