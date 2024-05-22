@@ -1,12 +1,13 @@
-use std::{ascii::AsciiExt, collections::HashMap, fmt::format};
+use std::{
+    collections::HashMap,
+};
 
 use crate::ast::ASTNode;
 
 #[derive(Debug, Clone)]
 pub struct SymbolTable<T> {
-    curr: HashMap<String, T>,
-    depth: usize,
-    count: usize,
+    table: HashMap<String, T>,
+    outer: Option<Box<SymbolTable<T>>>,
 }
 
 impl<T> Default for SymbolTable<T>
@@ -23,84 +24,53 @@ where
     T: Clone,
 {
     pub fn new() -> SymbolTable<T> {
-        let curr: HashMap<String, T> = HashMap::new();
+        let table: HashMap<String, T> = HashMap::new();
+        SymbolTable { table, outer: None }
+    }
+
+    pub fn enter_scope(&self) -> SymbolTable<T> {
+        let table: HashMap<String, T> = HashMap::new();
+        let symbol_table = Box::new(self.clone());
         SymbolTable {
-            curr,
-            depth: 0,
-            count: 0,
+            table,
+            outer: Some(symbol_table),
         }
-    }
-
-    pub fn enter_scope(&mut self) {
-        self.depth += 1;
-    }
-
-    pub fn exit_scope(&mut self) {
-        self.depth -= 1;
-    }
-
-    pub fn next_scope(&mut self) {
-        self.count += 1;
     }
 
     pub fn lookup(&self, name: &str) -> Option<T> {
-        let new_name = self.convert_to_scope_format(name);
-        match self.curr.get(&new_name) {
+        match self.table.get(name) {
             Some(v) => Some(v.clone()),
             None => {
-                let (depth, name, count) = SymbolTable::<T>::parse_name(&new_name);
-                if depth < 1 {
-                    return None;
+                if let Some(outer) = &self.outer {
+                    outer.lookup(name)
+                } else {
+                    None
                 }
-
-                let upper_name = &format!("{}{name}{count}", (depth - 1));
-                self.lookup(upper_name)
             }
         }
     }
-    fn convert_to_scope_format(&self, name: &str) -> String {
-        let prefix = format!("{}#", self.depth);
-        let suffix = format!("@{}", self.count);
-        let new_name = format!("{prefix}{name}{suffix}");
-        new_name
-    }
 
-    fn parse_name(name: &str) -> (usize, String, usize) {
-        let chars = name.chars();
-        let mut parts = vec!["".to_string(), "".to_string(), "".to_string()];
-        let mut pos = 0;
-        for i in chars {
-            if i == '#' {
-                pos = 1;
-                continue;
-            }
-            if i == '@' {
-                pos = 2;
-                continue;
-            }
-
-            parts[pos].push(i);
-        }
-        let name = parts[1].clone();
-        let prefix = parts[0].parse::<usize>().unwrap();
-        let suffix = parts[2].parse::<usize>().unwrap();
-        (prefix, name, suffix)
-    }
     pub fn insert(&mut self, name: &str, entry: T) {
-        let new_name = self.convert_to_scope_format(name);
-        self.curr.insert(new_name, entry);
+        self.table.insert(name.to_string(), entry);
     }
 }
 
-
-pub fn resolve_symbols(
-    ast: ASTNode,
-    symbol_table: &mut SymbolTable<ASTNode>,
-) {
+pub fn resolve_symbols(ast: &mut ASTNode, symbol_table: &mut SymbolTable<ASTNode>) {
     match ast {
         ASTNode::Declarations(nodes, _) => {
             for node in nodes {
                 resolve_symbols(node, symbol_table)
+            }
+        }
+        ASTNode::Let {
+            declarations,
+            expr: _,
+            location: _,
+            ref mut environment,
+        } => {
+            *environment = Some(Box::new(symbol_table.enter_scope()));
+            for declaration in declarations {
+                resolve_symbols(declaration, environment.as_mut().unwrap());
             }
         }
         ASTNode::VariableDeclaration {
@@ -108,12 +78,36 @@ pub fn resolve_symbols(
             value,
             location: _,
         } => {
-            symbol_table.insert(&variable, *value);
+            symbol_table.insert(variable, *value.to_owned());
+            resolve_symbols(value, symbol_table);
         }
-        ASTNode::Int(_, _)
-        | ASTNode::Float(_, _)
-        | ASTNode::Bool(_, _)
-        | ASTNode::Identifier(_, _) => {}
+        ASTNode::If {
+            condition,
+            if_body,
+            else_body,
+            location: _,
+        } => {
+            resolve_symbols(condition, symbol_table);
+            resolve_symbols(if_body, symbol_table);
+            resolve_symbols(else_body, symbol_table);
+        }
+        ASTNode::Binary {
+            op: _,
+            lhs,
+            rhs,
+            location: _,
+        } => {
+            resolve_symbols(lhs, symbol_table);
+            resolve_symbols(rhs, symbol_table);
+        }
+        ASTNode::Unary {
+            op: _,
+            expr,
+            location: _,
+        } => {
+            resolve_symbols(expr, symbol_table);
+        }
+        ASTNode::Grouping(Some(node), _) => resolve_symbols(node, symbol_table),
         _ => {}
     }
 }

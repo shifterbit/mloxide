@@ -108,10 +108,12 @@ pub fn typecheck(
                     node_type: expr_type,
                     location: loc,
                 }
-            },
-            None => {
-                TypedASTNode::Grouping { expr: None, node_type: Type::Unit, location: loc }
             }
+            None => TypedASTNode::Grouping {
+                expr: None,
+                node_type: Type::Unit,
+                location: loc,
+            },
         },
         ASTNode::Binary {
             op,
@@ -254,7 +256,8 @@ pub fn typecheck(
         ASTNode::Declarations(nodes, location) => {
             let mut declarations: Vec<TypedASTNode> = Vec::new();
             for node in nodes {
-                declarations.push(typecheck(node, symbol_table, type_table, errors));
+                let declaration = typecheck(node, symbol_table, type_table, errors);
+                declarations.push(declaration);
             }
             let node_types: Vec<Type> = declarations
                 .clone()
@@ -266,8 +269,41 @@ pub fn typecheck(
                 node_type: Type::Declarations(node_types),
                 location,
             }
-        },
-        ASTNode::Let { declarations, expr, location } => todo!()
+        }
+        ASTNode::Let {
+            declarations,
+            expr,
+            location,
+            environment,
+        } => {
+            let mut scoped_type_table = type_table.enter_scope();
+            let mut typed_declarations: Vec<TypedASTNode> = Vec::new();
+            for declaration in declarations {
+                let typed_declaration = typecheck(
+                    declaration,
+                    environment.as_ref().unwrap(),
+                    &mut scoped_type_table,
+                    errors,
+                );
+                typed_declarations.push(typed_declaration);
+            }
+
+            let typed_expr = typecheck(
+                *expr,
+                environment.as_ref().unwrap(),
+                &mut scoped_type_table,
+                errors,
+            );
+            let full_type = typed_expr.get_type();
+
+            TypedASTNode::Let {
+                declarations: typed_declarations,
+                expr: Box::new(typed_expr),
+                location,
+                environment: Some(Box::new(scoped_type_table)),
+                node_type: full_type,
+            }
+        }
     }
 }
 
@@ -312,7 +348,7 @@ fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
             match left_type {
                 Type::Int => (Type::Int, Type::Int),
                 Type::Float => (Type::Float, Type::Float),
-                _ => panic!("Invalid Type"),
+                _ => (Type::Unknown, Type::Unknown),
             }
         }
         Operator::Equal | Operator::NotEqual => (left_type.clone(), left_type),

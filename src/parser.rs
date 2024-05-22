@@ -4,8 +4,6 @@ use crate::lexer::Lexer;
 use crate::source_location::{SourceLocation, SourcePosition};
 use crate::token::TokenType;
 use std::fmt::{self, Display};
-use std::panic::AssertUnwindSafe;
-
 pub type ParseErrorList = Vec<ParseError>;
 
 #[derive(Debug, Clone)]
@@ -228,13 +226,12 @@ fn let_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
         return ASTNode::Error(SourceLocation::new(start, end));
     }
     lexer.consume();
-    println!("expression start {}", lexer.peek());
     let expr = expression(lexer, errors);
-    println!("expression end {}", lexer.peek());
+    
     let end_tok = lexer.consume();
     let end_loc = end_tok.source_location();
     if end_tok.token_type != TokenType::End {
-        let start = end_loc.start;
+        let _start = end_loc.start;
         let end = end_loc.end;
         let error_val = ParseError::new(
             "expected token end",
@@ -250,6 +247,7 @@ fn let_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
         declarations,
         expr: Box::new(expr),
         location: SourceLocation::new(let_loc.start, end_loc.end),
+        environment: None,
     }
 }
 fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {

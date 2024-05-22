@@ -43,8 +43,8 @@ pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>)
             location: _,
         } => match expr {
             Some(exp) => eval_expression(*exp, symbol_table),
-            None => Value::Unit
-        }
+            None => Value::Unit,
+        },
         TypedASTNode::Binary {
             node_type: _,
             op,
@@ -65,6 +65,19 @@ pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>)
             else_body,
             location: _,
         } => eval_if_expression(*condition, *if_body, *else_body, symbol_table),
+        TypedASTNode::Let {
+            node_type: _,
+            declarations,
+            expr,
+            location: _,
+            environment: _,
+        } => {
+            let mut scoped_symbol_table = symbol_table.enter_scope();
+            for declaration in declarations {
+                eval_expression(declaration, &mut scoped_symbol_table);
+            }
+            eval_expression(*expr, &mut scoped_symbol_table)
+        }
         TypedASTNode::VariableDeclaration {
             variable,
             value,

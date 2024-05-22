@@ -1,6 +1,9 @@
 use std::fmt::{self, Display};
 
-use crate::source_location::{SourceLocation, SourcePosition};
+use crate::{
+    source_location::{SourceLocation, SourcePosition},
+    symbol_table::SymbolTable,
+};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Operator {
@@ -62,7 +65,8 @@ pub enum ASTNode {
         declarations: Vec<ASTNode>,
         expr: Box<ASTNode>,
         location: SourceLocation,
-    }
+        environment: Option<Box<SymbolTable<ASTNode>>>,
+    },
 }
 
 impl SourcePosition for ASTNode {
@@ -97,7 +101,12 @@ impl SourcePosition for ASTNode {
                 else_body: _,
                 location,
             } => *location,
-            ASTNode::Let { declarations: _, expr: _, location } => *location
+            ASTNode::Let {
+                declarations: _,
+                expr: _,
+                location,
+                environment: _,
+            } => *location,
         }
     }
 }
@@ -181,6 +190,13 @@ pub enum TypedASTNode {
         else_body: Box<TypedASTNode>,
         location: SourceLocation,
     },
+    Let {
+        node_type: Type,
+        declarations: Vec<TypedASTNode>,
+        expr: Box<TypedASTNode>,
+        location: SourceLocation,
+        environment: Option<Box<SymbolTable<Type>>>,
+    },
 }
 
 impl TypedASTNode {
@@ -230,6 +246,13 @@ impl TypedASTNode {
                 condition: _,
                 if_body: _,
                 else_body: _,
+            } => t.clone(),
+            TypedASTNode::Let {
+                node_type: t,
+                declarations: _,
+                expr: _,
+                location: _,
+                environment: _,
             } => t.clone(),
         }
     }
@@ -282,6 +305,13 @@ impl SourcePosition for TypedASTNode {
                 if_body: _,
                 else_body: _,
                 location,
+            } => *location,
+            TypedASTNode::Let {
+                node_type: _,
+                declarations: _,
+                expr: _,
+                location,
+                environment: _,
             } => *location,
         }
     }
