@@ -113,7 +113,7 @@ impl Display for TokenType {
             TokenType::Else => write!(f, "Else"),
             TokenType::Val => write!(f, "Val"),
             TokenType::Let => write!(f, "Let"),
-            TokenType::In => write!(f, "End"),
+            TokenType::In => write!(f, "In"),
             TokenType::End => write!(f, "End"),
             TokenType::Identifier(i) => write!(f, "Identifier({})", i),
         }

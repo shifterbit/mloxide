@@ -266,7 +266,8 @@ pub fn typecheck(
                 node_type: Type::Declarations(node_types),
                 location,
             }
-        }
+        },
+        ASTNode::Let { declarations, expr, location } => todo!()
     }
 }
 

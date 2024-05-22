@@ -58,6 +58,11 @@ pub enum ASTNode {
         else_body: Box<ASTNode>,
         location: SourceLocation,
     },
+    Let {
+        declarations: Vec<ASTNode>,
+        expr: Box<ASTNode>,
+        location: SourceLocation,
+    }
 }
 
 impl SourcePosition for ASTNode {
@@ -92,6 +97,7 @@ impl SourcePosition for ASTNode {
                 else_body: _,
                 location,
             } => *location,
+            ASTNode::Let { declarations: _, expr: _, location } => *location
         }
     }
 }
