@@ -47,6 +47,7 @@ y + x
 - [x] Booleans
 - [ ] Strings
 - [ ] Lists
+- [x] Let Expressions
 - [x] Arithmetic Expressions
 - [x] Equality Expressions
 - [x] Grouping Expressions
@@ -54,7 +55,7 @@ y + x
 - [x] If Expressions
 - [x] Assignment
   - [x] Global Variables
-  - [ ] Local Variables 
+  - [x] Local Variables 
 - [ ] Pattern Matching
 - [x] Type Checking
 - [x] Proper Error Handling and Reporting
