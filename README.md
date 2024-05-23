@@ -37,9 +37,13 @@ else 9
 ```
 ### Variables
 ```sml
-val x = 2
-val y = 10
-y + x
+val x = 2;
+val y = 10;
+let
+  val z = y + 1;
+in if z <= x
+   then x + y
+   else y + z
 ```
 
 ## Features
@@ -51,7 +55,7 @@ y + x
 - [x] Arithmetic Expressions
 - [x] Equality Expressions
 - [x] Grouping Expressions
-- [ ] Comparison
+- [x] Comparison
 - [x] If Expressions
 - [x] Assignment
   - [x] Global Variables

@@ -14,6 +14,10 @@ pub enum Operator {
     Multiply,
     Equal,
     NotEqual,
+    GreaterThan,
+    LessThan,
+    GreaterEqual,
+    LessEqual,
 }
 
 impl Display for Operator {
@@ -26,6 +30,11 @@ impl Display for Operator {
             Operator::Multiply => write!(f, "*"),
             Operator::Equal => write!(f, "=="),
             Operator::NotEqual => write!(f, "!="),
+            Operator::LessThan => write!(f, "<"),
+            Operator::LessEqual => write!(f, "<="),
+            Operator::GreaterThan => write!(f, ">"),
+            Operator::GreaterEqual => write!(f, ">="),
+            
         }
     }
 }

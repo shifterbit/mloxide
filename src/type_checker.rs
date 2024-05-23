@@ -324,7 +324,12 @@ fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> 
                 Type::Unknown
             }
         }
-        Operator::Equal | Operator::NotEqual => Type::Bool,
+        Operator::Equal
+        | Operator::NotEqual
+        | Operator::LessThan
+        | Operator::LessEqual
+        | Operator::GreaterEqual
+        | Operator::GreaterThan => Type::Bool,
     }
 }
 
@@ -337,20 +342,30 @@ fn operator_return_types(operator: Operator) -> Vec<Type> {
         | Operator::Divide => {
             vec![Type::Int, Type::Float]
         }
-        Operator::Equal | Operator::NotEqual => {
+        Operator::Equal
+        | Operator::NotEqual
+        | Operator::LessThan
+        | Operator::LessEqual
+        | Operator::GreaterEqual
+        | Operator::GreaterThan => {
             vec![Type::Bool]
         }
     }
 }
 fn allowed_binary_op_type(operator: Operator, left_type: Type) -> (Type, Type) {
     match operator {
-        Operator::Add | Operator::Subtract | Operator::Multiply | Operator::Divide => {
-            match left_type {
-                Type::Int => (Type::Int, Type::Int),
-                Type::Float => (Type::Float, Type::Float),
-                _ => (Type::Unknown, Type::Unknown),
-            }
-        }
+        Operator::Add
+        | Operator::Subtract
+        | Operator::Multiply
+        | Operator::Divide
+        | Operator::LessThan
+        | Operator::LessEqual
+        | Operator::GreaterEqual
+        | Operator::GreaterThan => match left_type {
+            Type::Int => (Type::Int, Type::Int),
+            Type::Float => (Type::Float, Type::Float),
+            _ => (Type::Unknown, Type::Unknown),
+        },
         Operator::Equal | Operator::NotEqual => (left_type.clone(), left_type),
         _ => panic!("Expected Binary Operator"),
     }

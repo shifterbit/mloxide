@@ -19,7 +19,7 @@ impl Lexer {
                     offset += 1;
                     chars.next();
                 }
-                '=' | '!' => {
+                '=' | '!' | '<' | '>' => {
                     let literal = read_multi_character_token(&mut chars);
                     let length = literal.len();
                     let token = match_multi_character_token(&literal, offset);
@@ -196,6 +196,27 @@ fn match_multi_character_token(literal: &str, offset: usize) -> Token {
             literal: literal.to_owned(),
             offset,
         },
+        "<" => Token {
+            token_type: TokenType::LeftArrow,
+            literal: literal.to_owned(),
+            offset,
+        },
+        "<=" => Token {
+            token_type: TokenType::LeftArrowEqual,
+            literal: literal.to_owned(),
+            offset,
+        },
+        ">" => Token {
+            token_type: TokenType::RightArrow,
+            literal: literal.to_owned(),
+            offset,
+        },
+        ">=" => Token {
+            token_type: TokenType::RightArrowEqual,
+            literal: literal.to_owned(),
+            offset,
+        },
+
         _ => {
             panic!("Unexpected Character")
         }

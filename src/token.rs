@@ -61,10 +61,15 @@ pub enum TokenType {
     Negation,
     Equal,
     Semicolon,
+    RightArrow,
+    LeftArrow,
 
     // Multi Character Tokens
     EqualEqual,
     NotEqual,
+    RightArrowEqual,
+    LeftArrowEqual,
+
     // Values
     Float(f64),
     Int(i64),
@@ -116,6 +121,10 @@ impl Display for TokenType {
             TokenType::In => write!(f, "In"),
             TokenType::End => write!(f, "End"),
             TokenType::Identifier(i) => write!(f, "Identifier({})", i),
+            TokenType::RightArrow => write!(f, "RightArrow"),
+            TokenType::LeftArrow => write!(f, "LeftArrow"),
+            TokenType::RightArrowEqual => write!(f, "RightArrowEqual"),
+            TokenType::LeftArrowEqual => write!(f, "LeftArrowEqual"),
         }
     }
 }

@@ -161,8 +161,29 @@ fn eval_binary(
         Operator::Divide => match (lhs, rhs) {
             (Value::Int(l), Value::Int(r)) => Value::Int(l / r),
             (Value::Float(l), Value::Float(r)) => Value::Float(l / r),
-            _ => panic!("Type Error During Division"),
+            _ => panic!("Type Error During Comparison"),
         },
+        Operator::LessThan => match (lhs, rhs) {
+            (Value::Int(l), Value::Int(r)) => Value::Bool(l < r),
+            (Value::Float(l), Value::Float(r)) => Value::Bool(l < r),
+            _ => panic!("Type Error During Comparison"),
+        },
+        Operator::LessEqual => match (lhs, rhs) {
+            (Value::Int(l), Value::Int(r)) => Value::Bool(l <= r),
+            (Value::Float(l), Value::Float(r)) => Value::Bool(l <= r),
+            _ => panic!("Type Error During Comparison"),
+        },
+        Operator::GreaterEqual => match (lhs, rhs) {
+            (Value::Int(l), Value::Int(r)) => Value::Bool(l >= r),
+            (Value::Float(l), Value::Float(r)) => Value::Bool(l >= r),
+            _ => panic!("Type Error During Comparison"),
+        },
+        Operator::GreaterThan => match (lhs, rhs) {
+            (Value::Int(l), Value::Int(r)) => Value::Bool(l > r),
+            (Value::Float(l), Value::Float(r)) => Value::Bool(l > r),
+            _ => panic!("Type Error During Comparison"),
+        },
+
         _ => panic!("Invalid Binary Operator"),
     }
 }

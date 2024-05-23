@@ -207,7 +207,7 @@ fn let_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     }
     lexer.consume();
     let mut declarations: Vec<ASTNode> = Vec::new();
-    while [TokenType::Val ].contains(&lexer.peek().token_type) {
+    while [TokenType::Val].contains(&lexer.peek().token_type) {
         let declaration = variable_declaration(lexer, errors);
         declarations.push(declaration);
     }
@@ -227,7 +227,7 @@ fn let_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     }
     lexer.consume();
     let expr = expression(lexer, errors);
-    
+
     let end_tok = lexer.consume();
     let end_loc = end_tok.source_location();
     if end_tok.token_type != TokenType::End {
@@ -346,7 +346,7 @@ fn if_expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
 
 fn equality(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     let start = lexer.peek().source_location().start;
-    let lhs = term(lexer, errors);
+    let lhs = comparison(lexer, errors);
 
     let token = lexer.peek();
     match token.token_type {
@@ -366,6 +366,30 @@ fn equality(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     }
 }
 
+fn comparison(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
+    let start = lexer.peek().source_location().start;
+    let lhs = term(lexer, errors);
+
+    let token = lexer.peek();
+    match token.token_type {
+        TokenType::LeftArrow
+        | TokenType::LeftArrowEqual
+        | TokenType::RightArrowEqual
+        | TokenType::RightArrow => {
+            lexer.consume();
+            let rhs = comparison(lexer, errors);
+            let end = lexer.previous().source_location().end;
+
+            ASTNode::Binary {
+                op: get_operator(token.token_type),
+                lhs: Box::new(lhs),
+                rhs: Box::new(rhs),
+                location: SourceLocation::new(start, end),
+            }
+        }
+        _ => lhs,
+    }
+}
 fn term(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     let start = lexer.peek().source_location().start;
     let lhs = factor(lexer, errors);
@@ -486,6 +510,10 @@ fn get_operator(token_type: TokenType) -> Operator {
         TokenType::Negation => Operator::Negate,
         TokenType::EqualEqual => Operator::Equal,
         TokenType::NotEqual => Operator::NotEqual,
+        TokenType::RightArrow => Operator::GreaterThan,
+        TokenType::LeftArrow => Operator::LessThan,
+        TokenType::RightArrowEqual => Operator::GreaterEqual,
+        TokenType::LeftArrowEqual => Operator::LessEqual,
         _ => panic!("Invalid Operator"),
     }
 }
