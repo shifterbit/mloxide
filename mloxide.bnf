@@ -5,7 +5,8 @@
 <val_declaration> ::= "val" <wp> "=" <expression> ";"
 <let_expression> ::= "let" <wp> <declarations> <wp> "in" <wp> <expression> <wp> "end"
 <if_expression> ::= "if" <wp> <expression> <wp> "then" <wp> <expression> <wp> "else" <wp> <expression>
-<equality> ::= <term> ("==" | "!=") <equality> | <term>
+<equality> ::= <comparison> ("==" | "!=") <equality> | <comparison>
+<comparison> ::= <term> (">" | ">=" | "<=" | "<") <comparison> | <term>
 <term> ::= <factor> ("+" | "-") <term> | <factor>
 <factor> ::= <unary> ("/" | "*") <factor> | <unary>
 <unary> ::= ("~") <unary> | <primary>
