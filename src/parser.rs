@@ -51,9 +51,9 @@ impl Display for ParseError {
     }
 }
 
-pub fn parse(lexer: &mut Lexer) -> Result<ASTNode, Vec<ParseError>> {
+pub fn parse(lexer: &mut Lexer) -> Result<ASTNode, (ParseErrorList, ASTNode)> {
     let mut errors: Vec<ParseError> = Vec::new();
-    declarations(lexer, &mut errors)
+    program(lexer, &mut errors)
 }
 
 fn recover_from_error(lexer: &mut Lexer) {
@@ -85,10 +85,10 @@ fn expression(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
     }
 }
 
-fn declarations(
+fn program(
     lexer: &mut Lexer,
     errors: &mut Vec<ParseError>,
-) -> Result<ASTNode, ParseErrorList> {
+) -> Result<ASTNode, (ParseErrorList, ASTNode)> {
     let mut declarations: Vec<ASTNode> = Vec::new();
     let declarations_loc_start = lexer.peek().source_location();
     let start = declarations_loc_start.start;
@@ -109,12 +109,15 @@ fn declarations(
             }
         }
     }
+    let location = SourceLocation::new(start, end);
 
     if errors.is_empty() {
-        let location = SourceLocation::new(start, end);
         Ok(ASTNode::Declarations(declarations, location))
     } else {
-        Err(errors.to_vec())
+        Err((
+            errors.to_vec(),
+            ASTNode::Declarations(declarations, location),
+        ))
     }
 }
 

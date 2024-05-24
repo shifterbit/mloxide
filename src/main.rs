@@ -8,6 +8,7 @@ fn main() {
     if args.len() < 2 {
         println!("Usage: {name} <path to file>")
     } else {
-        mloxide::run(&args[1]);
+        mloxide::run_file(&args[1]);
+        
     }
 }

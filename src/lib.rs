@@ -18,7 +18,7 @@ pub mod symbol_table;
 pub mod token;
 pub mod type_checker;
 
-pub fn run(filepath: &str) {
+pub fn run_file(filepath: &str) {
     let source = fs::read_to_string(filepath).unwrap();
     let mut lexer = Lexer::new(&source);
     let mut ast = parse(&mut lexer);
@@ -38,8 +38,17 @@ pub fn run(filepath: &str) {
                 }
             }
         }
-        Err(errors) => {
+        Err((errors, _ast)) => {
             errors_from_file(filepath, &source, errors);
         }
+    }
+}
+
+pub fn generate_ast(source: &str) -> ASTNode {
+    let mut lexer = Lexer::new(source);
+    let ast = parse(&mut lexer);
+    match ast {
+        Ok(a) => a,
+        Err((_, a)) => a,
     }
 }
