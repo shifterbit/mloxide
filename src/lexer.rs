@@ -26,7 +26,7 @@ impl Lexer {
                     tokens.push(token.clone());
                     offset += length;
                 }
-                '(' | ')' | '+' | '-' | '*' | '/' | '~' | ';' => {
+                '(' | ')' | '+' | '-' | '*' | '/' | '~' | ';' | ',' => {
                     let token = match_single_character_token(*character, offset);
                     tokens.push(token.unwrap());
                     offset += 1;
@@ -238,6 +238,7 @@ fn match_single_character_token(
         '/' => TokenType::ForwardSlash,
         '~' => TokenType::Negation,
         ';' => TokenType::Semicolon,
+        ',' => TokenType::Comma,
         _ => return Err(InvalidTokenError),
     };
     let token = Token::new(character.to_string(), token_type, offset);

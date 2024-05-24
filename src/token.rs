@@ -63,6 +63,7 @@ pub enum TokenType {
     Semicolon,
     RightArrow,
     LeftArrow,
+    Comma,
 
     // Multi Character Tokens
     EqualEqual,
@@ -125,6 +126,7 @@ impl Display for TokenType {
             TokenType::LeftArrow => write!(f, "LeftArrow"),
             TokenType::RightArrowEqual => write!(f, "RightArrowEqual"),
             TokenType::LeftArrowEqual => write!(f, "LeftArrowEqual"),
+            TokenType::Comma => write!(f, "Comma"),
         }
     }
 }
