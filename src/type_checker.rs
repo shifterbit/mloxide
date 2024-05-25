@@ -5,7 +5,7 @@ use crate::{
     error_reporting::CompilerError,
     source_location::{SourceLocation, SourcePosition},
     symbol_table::SymbolTable,
-    types::Type
+    types::Type,
 };
 
 pub type TypeErrorList = Vec<TypeError>;
@@ -279,11 +279,7 @@ pub fn typecheck(
                 let expr = typecheck(node, symbol_table, type_table, errors);
                 exprs.push(expr);
             }
-            let node_types: Vec<Type> = exprs
-                .clone()
-                .into_iter()
-                .map(|x| x.get_type())
-                .collect();
+            let node_types: Vec<Type> = exprs.clone().into_iter().map(|x| x.get_type()).collect();
             TypedASTNode::Tuple {
                 exprs,
                 node_type: Type::Tuple(node_types),
