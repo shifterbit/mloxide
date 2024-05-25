@@ -46,10 +46,12 @@ pub enum ASTNode {
     Bool(bool, SourceLocation),
     Tuple(Vec<ASTNode>, SourceLocation),
     Identifier(String, SourceLocation),
+    TypeVariable(String, SourceLocation),
     Grouping(Option<Box<ASTNode>>, SourceLocation),
     Declarations(Vec<ASTNode>, SourceLocation),
     VariableDeclaration {
         variable: String,
+        type_declaration: Option<Box<ASTNode>>,
         value: Box<ASTNode>,
         location: SourceLocation,
     },
@@ -86,12 +88,14 @@ impl SourcePosition for ASTNode {
             ASTNode::Float(_, location) => *location,
             ASTNode::Bool(_, location) => *location,
             ASTNode::Identifier(_, location) => *location,
+            ASTNode::TypeVariable(_, location) => *location,
             ASTNode::Grouping(_, location) => *location,
             ASTNode::Tuple(_, location) => *location,
             ASTNode::Declarations(_, location) => *location,
             ASTNode::VariableDeclaration {
                 variable: _,
                 value: _,
+                type_declaration: _,
                 location,
             } => *location,
             ASTNode::Binary {

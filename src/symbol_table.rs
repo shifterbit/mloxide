@@ -76,6 +76,7 @@ pub fn resolve_symbols(ast: &mut ASTNode, symbol_table: &mut SymbolTable<ASTNode
         ASTNode::VariableDeclaration {
             variable,
             value,
+            type_declaration: _,
             location: _,
         } => {
             symbol_table.insert(variable, *value.to_owned());

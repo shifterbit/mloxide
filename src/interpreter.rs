@@ -27,7 +27,7 @@ impl Display for Value {
                     msg.push_str(&(value.to_string() + ", "));
                 }
                 msg = msg.strip_suffix(", ").unwrap().to_string();
-                msg.push_str(")");
+                msg.push(')');
                 write!(f, "{}", msg)
             }
         }
@@ -64,7 +64,7 @@ pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>)
                 .iter()
                 .map(|expr| eval_expression(expr.clone(), symbol_table))
                 .collect();
-            return Value::Tuple(values);
+            Value::Tuple(values)
         }
         TypedASTNode::Binary {
             node_type: _,
@@ -161,13 +161,12 @@ fn eval_binary(
                 } else {
                     for i in 0..t1.len() {
                         if t1[i] != t2[i] {
-                            return Value::Bool(false)
+                            return Value::Bool(false);
                         }
                     }
                     Value::Bool(true)
-                    
                 }
-            },
+            }
             _ => panic!("Type Error During Equality Check"),
         },
         Operator::NotEqual => match (lhs, rhs) {

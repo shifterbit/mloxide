@@ -82,6 +82,7 @@ pub fn typecheck(
         ASTNode::Int(n, loc) => TypedASTNode::Int(n, loc),
         ASTNode::Float(n, loc) => TypedASTNode::Float(n, loc),
         ASTNode::Bool(b, loc) => TypedASTNode::Bool(b, loc),
+        ASTNode::TypeVariable(_, _) => todo!(),
         ASTNode::Identifier(i, loc) => match &symbol_table.lookup(&i) {
             Some(_) => {
                 let expr_type = type_table.lookup(&i).unwrap_or(Type::Unknown);
@@ -241,6 +242,7 @@ pub fn typecheck(
         ASTNode::VariableDeclaration {
             variable,
             value,
+            type_declaration: _,
             location,
         } => {
             let val_node = typecheck(*value.clone(), symbol_table, type_table, errors);

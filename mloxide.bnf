@@ -1,8 +1,8 @@
 <program> ::= <declarations> | <declarations> <expression> | <expression>
 <declarations> ::= <declaration> <declarations> | <declaration>
-<declaration> ::= <val_declaration> 
+<declaration> ::= <val_declaration> ";" 
 <expression> ::= <equality> | <if_expression>
-<val_declaration> ::= "val" <wp> "=" <expression> ";"
+<val_declaration> ::= "val" <wp> "=" <expression> | "val" <wp> ":" <wp> <type> <wp>  "=" <expression>
 <let_expression> ::= "let" <wp> <declarations> <wp> "in" <wp> <expression> <wp> "end"
 <if_expression> ::= "if" <wp> <expression> <wp> "then" <wp> <expression> <wp> "else" <wp> <expression>
 <equality> ::= <comparison> ("==" | "!=") <equality> | <comparison>
@@ -21,6 +21,7 @@
 <tuple_values> ::= <expression> | <tuple_values> "," <expression>
 
 
+<type> ::= <identifier>
 <identifier> ::= <letter> <identifier_text>
 <identifier_text> ::= <identifier_character> <identifier_text> | <identifier_character>
 <identifier_character> ::= <letter> | <digit> | "_"

@@ -61,6 +61,7 @@ pub enum TokenType {
     Negation,
     Equal,
     Semicolon,
+    Colon,
     RightArrow,
     LeftArrow,
     Comma,
@@ -127,6 +128,7 @@ impl Display for TokenType {
             TokenType::RightArrowEqual => write!(f, "RightArrowEqual"),
             TokenType::LeftArrowEqual => write!(f, "LeftArrowEqual"),
             TokenType::Comma => write!(f, "Comma"),
+            TokenType::Colon => write!(f, "Colon"),
         }
     }
 }

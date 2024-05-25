@@ -149,15 +149,41 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
     };
     lexer.consume();
 
+    let mut type_declaration = None;
+    let mut type_name: String = String::new();
+    let colon_tok = lexer.peek();
+    if colon_tok.token_type == TokenType::Colon {
+        lexer.consume();
+        let type_tok = lexer.peek();
+        let type_tok_loc = type_tok.source_location();
+
+        if let TokenType::Identifier(id) = type_tok.token_type {
+            type_name = id.clone();
+            let type_decl = ASTNode::TypeVariable(id, type_tok_loc);
+            type_declaration = Some(Box::new(type_decl));
+        } else {
+            let location = lexer.previous().source_location();
+            let error_val = ParseError::new(
+                "expected type declaration after :",
+                location,
+                None,
+                None,
+            );
+            errors.push(error_val);
+            return ASTNode::Error(location);
+        }
+    }
+    lexer.consume();
+
     let eq_tok = lexer.peek();
     if eq_tok.token_type != TokenType::Equal {
         let location = lexer.previous().source_location();
-        let error_val = ParseError::new(
-            &format!("'=' expected after {variable_name}"),
-            location,
-            None,
-            None,
-        );
+        let message = if type_declaration.is_none() {
+            format!("'=' expected after {variable_name}")
+        } else {
+            format!("= expected after {type_name}")
+        };
+        let error_val = ParseError::new(&message, location, None, None);
         errors.push(error_val);
         return ASTNode::Error(location);
     }
@@ -186,10 +212,12 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
     }
     let semicolon_loc = lexer.consume().source_location();
     let location = SourceLocation::new(val_tok_loc.start, semicolon_loc.end);
+
     ASTNode::VariableDeclaration {
         variable: variable_name,
         value: Box::new(assigned_expr),
         location,
+        type_declaration,
     }
 }
 
