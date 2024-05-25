@@ -51,6 +51,7 @@ in if z <= x
 - [x] Booleans
 - [ ] Strings
 - [ ] Lists
+- [x] Tuples
 - [x] Let Expressions
 - [x] Arithmetic Expressions
 - [x] Equality Expressions
@@ -62,6 +63,10 @@ in if z <= x
   - [x] Local Variables 
 - [ ] Pattern Matching
 - [x] Type Checking
+- [x] Type System
+  - [x] Type Inference
+  - [ ] Sum Types
+  - [ ] Type Declarations
 - [x] Proper Error Handling and Reporting
   - [x] Syntax Errors
 	- [x] Error Reporting
