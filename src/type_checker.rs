@@ -1,10 +1,11 @@
 use std::fmt::{self, Display};
 
 use crate::{
-    ast::{ASTNode, Operator, Type, TypedASTNode},
+    ast::{ASTNode, Operator, TypedASTNode},
     error_reporting::CompilerError,
     source_location::{SourceLocation, SourcePosition},
     symbol_table::SymbolTable,
+    types::Type
 };
 
 pub type TypeErrorList = Vec<TypeError>;

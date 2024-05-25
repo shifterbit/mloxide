@@ -17,6 +17,7 @@ pub mod source_location;
 pub mod symbol_table;
 pub mod token;
 pub mod type_checker;
+pub mod types;
 
 pub fn run_file(filepath: &str) {
     let source = fs::read_to_string(filepath).unwrap();
