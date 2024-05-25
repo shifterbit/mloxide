@@ -5,11 +5,12 @@ use crate::{
     symbol_table::SymbolTable,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Int(i64),
     Float(f64),
     Bool(bool),
+    Tuple(Vec<Value>),
     Unit,
 }
 
@@ -20,6 +21,15 @@ impl Display for Value {
             Value::Int(n) => write!(f, "{}", n),
             Value::Float(n) => write!(f, "{}", n),
             Value::Unit => write!(f, ""),
+            Value::Tuple(values) => {
+                let mut msg = "(".to_string();
+                for value in values {
+                    msg.push_str(&(value.to_string() + ", "));
+                }
+                msg = msg.strip_suffix(", ").unwrap().to_string();
+                msg.push_str(")");
+                write!(f, "{}", msg)
+            }
         }
     }
 }
@@ -45,6 +55,17 @@ pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>)
             Some(exp) => eval_expression(*exp, symbol_table),
             None => Value::Unit,
         },
+        TypedASTNode::Tuple {
+            exprs,
+            node_type: _,
+            location: _,
+        } => {
+            let values: Vec<Value> = exprs
+                .iter()
+                .map(|expr| eval_expression(expr.clone(), symbol_table))
+                .collect();
+            return Value::Tuple(values);
+        }
         TypedASTNode::Binary {
             node_type: _,
             op,
@@ -134,6 +155,19 @@ fn eval_binary(
             (Value::Int(l), Value::Int(r)) => Value::Bool(l == r),
             (Value::Float(l), Value::Float(r)) => Value::Bool(l == r),
             (Value::Bool(l), Value::Bool(r)) => Value::Bool(l == r),
+            (Value::Tuple(t1), Value::Tuple(t2)) => {
+                if t1.len() != t2.len() {
+                    Value::Bool(false)
+                } else {
+                    for i in 0..t1.len() {
+                        if t1[i] != t2[i] {
+                            return Value::Bool(false)
+                        }
+                    }
+                    Value::Bool(true)
+                    
+                }
+            },
             _ => panic!("Type Error During Equality Check"),
         },
         Operator::NotEqual => match (lhs, rhs) {
@@ -197,6 +231,7 @@ fn eval_unary(op: Operator, right: TypedASTNode, symbol_table: &mut SymbolTable<
             Value::Float(n) => Value::Float(-n),
             Value::Bool(_b) => panic!("Cannot negate type bool"),
             Value::Unit => panic!("Cannot negate unit type"),
+            Value::Tuple(_) => panic!("Cannot negate tuple"),
         },
         _ => panic!("Invalid Unary Operator"),
     }

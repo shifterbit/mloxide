@@ -6,7 +6,7 @@ use interpreter::Value;
 use lexer::Lexer;
 use parser::parse;
 use symbol_table::{resolve_symbols, SymbolTable};
-use type_checker::check_types;
+use type_checker::check;
 
 pub mod ast;
 pub mod error_reporting;
@@ -26,7 +26,7 @@ pub fn run_file(filepath: &str) {
         Ok(ref mut a) => {
             let mut symbol_table: SymbolTable<ASTNode> = SymbolTable::new();
             resolve_symbols(a, &mut symbol_table);
-            let typed_ast = check_types(a.clone(), &symbol_table);
+            let typed_ast = check(a.clone(), &symbol_table);
             match typed_ast {
                 Ok(tast) => {
                     let mut value_table: SymbolTable<Value> = SymbolTable::new();

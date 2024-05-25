@@ -57,7 +57,7 @@ impl Display for TypeError {
     }
 }
 
-pub fn check_types(
+pub fn check(
     ast: ASTNode,
     symbol_table: &SymbolTable<ASTNode>,
 ) -> Result<TypedASTNode, TypeErrorList> {
@@ -267,6 +267,23 @@ pub fn typecheck(
             TypedASTNode::Declarations {
                 declarations,
                 node_type: Type::Declarations(node_types),
+                location,
+            }
+        }
+        ASTNode::Tuple(nodes, location) => {
+            let mut exprs: Vec<TypedASTNode> = Vec::new();
+            for node in nodes {
+                let expr = typecheck(node, symbol_table, type_table, errors);
+                exprs.push(expr);
+            }
+            let node_types: Vec<Type> = exprs
+                .clone()
+                .into_iter()
+                .map(|x| x.get_type())
+                .collect();
+            TypedASTNode::Tuple {
+                exprs,
+                node_type: Type::Tuple(node_types),
                 location,
             }
         }

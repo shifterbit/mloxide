@@ -34,7 +34,6 @@ impl Display for Operator {
             Operator::LessEqual => write!(f, "<="),
             Operator::GreaterThan => write!(f, ">"),
             Operator::GreaterEqual => write!(f, ">="),
-            
         }
     }
 }
@@ -45,6 +44,7 @@ pub enum ASTNode {
     Int(i64, SourceLocation),
     Float(f64, SourceLocation),
     Bool(bool, SourceLocation),
+    Tuple(Vec<ASTNode>, SourceLocation),
     Identifier(String, SourceLocation),
     Grouping(Option<Box<ASTNode>>, SourceLocation),
     Declarations(Vec<ASTNode>, SourceLocation),
@@ -87,6 +87,7 @@ impl SourcePosition for ASTNode {
             ASTNode::Bool(_, location) => *location,
             ASTNode::Identifier(_, location) => *location,
             ASTNode::Grouping(_, location) => *location,
+            ASTNode::Tuple(_, location) => *location,
             ASTNode::Declarations(_, location) => *location,
             ASTNode::VariableDeclaration {
                 variable: _,
@@ -126,6 +127,7 @@ pub enum Type {
     Float,
     Bool,
     Declarations(Vec<Type>),
+    Tuple(Vec<Type>),
     Unit,
     Unknown,
 }
@@ -146,6 +148,16 @@ impl Display for Type {
                 msg.push_str(" ]");
                 write!(f, "{}", msg)
             }
+            Type::Tuple(types) => {
+                let mut msg = String::new();
+                for item in types {
+                    msg.push_str(&(" * ".to_string() + &item.to_string()));
+                }
+                msg = msg.trim().strip_prefix('*').unwrap().to_owned();
+                let display = msg.split_at(1).1;
+
+                write!(f, "({})", display)
+            }
         }
     }
 }
@@ -163,6 +175,11 @@ pub enum TypedASTNode {
     },
     Grouping {
         expr: Option<Box<TypedASTNode>>,
+        node_type: Type,
+        location: SourceLocation,
+    },
+    Tuple {
+        exprs: Vec<TypedASTNode>,
         node_type: Type,
         location: SourceLocation,
     },
@@ -231,6 +248,11 @@ impl TypedASTNode {
                 declarations: _,
                 node_type: t,
             } => t.clone(),
+            TypedASTNode::Tuple {
+                location: _,
+                exprs: _,
+                node_type: t,
+            } => t.clone(),
             TypedASTNode::Grouping {
                 location: _,
                 expr: _,
@@ -282,6 +304,11 @@ impl SourcePosition for TypedASTNode {
             TypedASTNode::Grouping {
                 expr: _,
                 node_type: _,
+                location,
+            } => *location,
+            TypedASTNode::Tuple {
+                node_type: _,
+                exprs: _,
                 location,
             } => *location,
             TypedASTNode::Declarations {

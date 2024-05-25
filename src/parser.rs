@@ -472,14 +472,33 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
                     SourceLocation::new(start, closing.source_location().end),
                 );
             }
+
             let expr = expression(lexer, errors);
+            let mut expressions: Vec<ASTNode> = vec![expr.clone()];
+
+            // We look to see in case this might be a tuple
+            while lexer.peek().token_type == TokenType::Comma {
+                lexer.consume();
+                if lexer.peek().token_type == TokenType::RightParen {
+                    let error = ParseError::new(
+                        "expected an expression before closing parenthesis",
+                        lexer.peek().source_location(),
+                        None,
+                        None,
+                    );
+                    errors.push(error);
+                    return ASTNode::Error(SourceLocation::new(
+                        start,
+                        lexer.peek().source_location().end,
+                    ));
+                }
+                expressions.push(expression(lexer, errors));
+            }
+
             let closing_paren = lexer.peek();
             let end = closing_paren.source_location().end;
 
-            if closing_paren.token_type == TokenType::RightParen {
-                lexer.consume();
-                ASTNode::Grouping(Some(Box::new(expr)), SourceLocation::new(start, end))
-            } else {
+            if closing_paren.token_type != TokenType::RightParen {
                 let error = ParseError::new(
                     "Expected closing parenthesis",
                     lexer.peek().source_location(),
@@ -487,7 +506,14 @@ fn primary(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTNode {
                     None,
                 );
                 errors.push(error);
-                ASTNode::Error(SourceLocation::new(start, end))
+                return ASTNode::Error(SourceLocation::new(start, end));
+            }
+
+            lexer.consume();
+            if expressions.len() > 1 {
+                ASTNode::Tuple(expressions, SourceLocation::new(start, end))
+            } else {
+                ASTNode::Grouping(Some(Box::new(expr)), SourceLocation::new(start, end))
             }
         }
         _ => {
