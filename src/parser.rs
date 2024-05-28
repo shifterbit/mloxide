@@ -600,7 +600,6 @@ fn parse_tuple(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Pattern {
                 lexer.peek().source_location().end,
             ));
         }
-        println!("innser pattern {}", lexer.peek());
         let next = pattern(lexer, errors);
         patterns.push(next);
     }

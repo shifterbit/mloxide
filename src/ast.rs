@@ -101,7 +101,6 @@ impl ASTNode {
         self.annotate_node(&mut id)
     }
     fn annotate_node(&self, node_id: &mut Vec<usize>) -> AnnotatedASTNode {
-        println!("{:?}", node_id);
         let curr_id = node_id[0];
         match self {
             ASTNode::Error(location) => {
