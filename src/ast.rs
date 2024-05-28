@@ -232,13 +232,12 @@ impl ASTNode {
                     .iter()
                     .map(|item| item.annotate_node(node_id))
                     .collect();
-                let new_env: Option<Box<SymbolTable<AnnotatedASTNode>>> =
-                    if environment.is_some() {
-                        let table: SymbolTable<AnnotatedASTNode> = SymbolTable::new();
-                        Some(Box::new(table))
-                    } else {
-                        None
-                    };
+                let new_env: Option<Box<SymbolTable<AnnotatedASTNode>>> = if environment.is_some() {
+                    let table: SymbolTable<AnnotatedASTNode> = SymbolTable::new();
+                    Some(Box::new(table))
+                } else {
+                    None
+                };
                 let expr = Box::new(expr.annotate_node(node_id));
 
                 AnnotatedASTNode::Let {
@@ -345,6 +344,140 @@ pub enum AnnotatedASTNode {
 }
 
 impl AnnotatedASTNode {
+    pub fn lookup(&self, id: usize) -> Option<AnnotatedASTNode> {
+        match self {
+            AnnotatedASTNode::Error(_, _)
+            | AnnotatedASTNode::Int(_, _, _)
+            | AnnotatedASTNode::Float(_, _, _)
+            | AnnotatedASTNode::Bool(_, _, _)
+            | AnnotatedASTNode::Identifier(_, _, _)
+            | AnnotatedASTNode::TypeVariable(_, _, _) => {
+                if id == self.node_id() {
+                    return Some(self.clone());
+                } else {
+                    return None;
+                }
+            }
+
+            AnnotatedASTNode::Grouping(inner, _, _) => {
+                if self.node_id() == id {
+                    Some(self.clone())
+                } else if let Some(inside) = inner {
+                    inside.lookup(id)
+                } else {
+                    None
+                }
+            }
+            AnnotatedASTNode::Tuple(items, _, _) => {
+                if id == self.node_id() {
+                    return Some(self.clone());
+                } else {
+                    for i in items {
+                        let inner_lookup = i.lookup(id);
+                        if inner_lookup.is_some() {
+                            return inner_lookup;
+                        }
+                    }
+                    return None;
+                }
+            }
+            AnnotatedASTNode::Declarations(items, _, _) => {
+                if id == self.node_id() {
+                    return Some(self.clone());
+                } else {
+                    for i in items {
+                        let inner_lookup = i.lookup(id);
+                        if inner_lookup.is_some() {
+                            return inner_lookup;
+                        }
+                    }
+                    return None;
+                }
+            }
+            AnnotatedASTNode::VariableDeclaration {
+                pattern: _,
+                value,
+                type_declaration: _,
+                location: _,
+                node_id,
+            } => {
+                if self.node_id() == id {
+                    Some(self.clone())
+                } else {
+                    value.lookup(id)
+                }
+            }
+            AnnotatedASTNode::Binary {
+                op: _,
+                lhs,
+                rhs,
+                location: _,
+                node_id: _,
+            } => {
+                if id == self.node_id() {
+                    return Some(self.clone());
+                } else {
+                    for i in [lhs, rhs] {
+                        let inner_lookup = i.lookup(id);
+                        if inner_lookup.is_some() {
+                            return inner_lookup;
+                        }
+                    }
+                    return None;
+                }
+            }
+            AnnotatedASTNode::Unary {
+                op: _,
+                expr,
+                location: _,
+                node_id,
+            } => {
+                if id == self.node_id() {
+                    Some(self.clone())
+                } else {
+                    expr.lookup(id)
+                }
+            }
+            AnnotatedASTNode::If {
+                condition,
+                if_body,
+                else_body,
+                location: _,
+                node_id,
+            } => {
+                if id == self.node_id() {
+                    return Some(self.clone());
+                } else {
+                    for i in [condition, if_body, else_body] {
+                        let inner_lookup = i.lookup(id);
+                        if inner_lookup.is_some() {
+                            return inner_lookup;
+                        }
+                    }
+                    return None;
+                }
+            }
+            AnnotatedASTNode::Let {
+                declarations,
+                expr,
+                location: _,
+                node_id: _,
+                environment: _,
+            } => {
+                if id == self.node_id() {
+                    return Some(self.clone());
+                } else {
+                    for i in declarations {
+                        let inner_lookup = i.lookup(id);
+                        if inner_lookup.is_some() {
+                            return inner_lookup;
+                        }
+                    }
+                }
+                return expr.lookup(id);
+            }
+        }
+    }
     pub fn node_id(&self) -> usize {
         match self {
             AnnotatedASTNode::Error(_, node_id) => *node_id,
