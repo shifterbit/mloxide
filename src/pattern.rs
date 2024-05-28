@@ -10,14 +10,18 @@ use crate::{
 };
 
 #[derive(Debug)]
+pub struct Action {
+    bindings: Vec<(Pattern, usize)>,
+}
+#[derive(Debug)]
 pub struct PatternMatrix {
-    occurences: Vec<usize>,
-    rows: Vec<Row>,
+    clauses: Vec<(Vec<Pattern>, Action)>,
+    occurences: (usize, Vec<usize>),
 }
 
 impl PatternMatrix {
-    pub fn from_ast(ast: &AnnotatedASTNode) -> PatternMatrix {
-        match ast {
+    pub fn from_ast(node: &AnnotatedASTNode) -> PatternMatrix {
+        match node {
             AnnotatedASTNode::VariableDeclaration {
                 pattern,
                 type_declaration,
@@ -25,98 +29,49 @@ impl PatternMatrix {
                 location,
                 node_id,
             } => {
-                let row = Row::from_ast(ast);
-                let occurences = [1, 2].to_vec();
+                let top_level = value.node_id();
+                let os = occurences(value);
+
+                let row = match pattern {
+                    Pattern::Wildcard(_) => vec![pattern.clone()],
+                    Pattern::Variable(_, _) => vec![pattern.clone()],
+                    Pattern::Int(_, _) => vec![pattern.clone()],
+                    Pattern::Float(_, _) => vec![pattern.clone()],
+                    Pattern::Tuple(inner, _) => inner.clone(),
+                    Pattern::Error(_) => todo!(),
+                };
+                let bindings: Vec<(Pattern, usize)> = if row.len() == 1 {
+                    vec![(row[0].clone(), top_level)]
+                } else {
+                    row.iter()
+                        .zip(os.clone())
+                        .map(|(pat, size)| (pat.clone(), size))
+                        .collect()
+                };
+
+                let action = Action { bindings };
+                let clauses = vec![(row.clone(), action)];
                 PatternMatrix {
-                    rows: vec![row],
-                    occurences,
+                    clauses,
+                    occurences: (top_level, os),
                 }
-            },
-            _ => panic!("Match not supported")
+            }
+            _ => todo!(),
         }
     }
 }
 
-fn split_pattern(pattern: Pattern, occurences: Vec<usize>) -> Vec<Pattern> {
-    match pattern {
-        Pattern::Tuple(pats, _) => pats,
-        Pattern::Float(_, _)
-        | Pattern::Int(_, _)
-        | Pattern::Variable(_, _)
-        | Pattern::Wildcard(_) => {
-            vec![pattern]
-        }
-        Pattern::Error(_) => panic!("DO NOT USE ERROR PATTERN"),
-    }
-}
-
-fn occurrences(node: AnnotatedASTNode) -> Vec<usize> {
+fn occurences(node: &AnnotatedASTNode) -> Vec<usize> {
     match node {
-        AnnotatedASTNode::Tuple(items, _, _) => {
-            let mut ocs: Vec<usize> = vec![];
-            for i in items {
-                for o in occurrences(i) {
-                    ocs.push(o);
-                }
-            }
-            ocs
-        }
-        v => vec![v.node_id()],
+        AnnotatedASTNode::Tuple(nodes, _, _) => nodes.iter().map(|x| x.node_id()).collect(),
+        AnnotatedASTNode::Error(_, _) => panic!("Cannot work with error nodes"),
+        others => vec![others.node_id()],
     }
 }
-#[derive(Debug)]
-struct Row {
-    columns: Vec<Column>,
-    action: Action,
-}
-
-impl Row {
-    fn new(columns: Vec<Column>, action: Action) -> Row {
-        Row { columns, action }
-    }
-
-    fn from_ast(ast: &AnnotatedASTNode) -> Row {
-        match ast {
-            AnnotatedASTNode::VariableDeclaration {
-                pattern,
-                type_declaration: _,
-                ref value,
-                location,
-                node_id,
-            } => {
-                todo!()
-            }
-            _ => panic!("Panic pattern matching not support here"),
-        }
-    }
-}
-#[derive(Debug)]
-struct Column {
-    id: usize,
-    pattern: Pattern,
-}
-
-impl Column {
-    fn new(id: usize, pattern: Pattern) -> Column {
-        Column { id, pattern }
-    }
-    fn binding(&self, node: &AnnotatedASTNode) -> (usize, AnnotatedASTNode) {
-        let target = node.lookup(self.id).unwrap();
-        (self.id, target)
-    }
-}
-
-#[derive(Debug)]
-struct Action {
-    bindings: Vec<(usize, AnnotatedASTNode)>,
-    expr: Option<Box<AnnotatedASTNode>>,
-}
-
-impl Action {
-    fn new(bindings: Vec<(usize, AnnotatedASTNode)>) -> Action {
-        Action {
-            bindings,
-            expr: None,
-        }
+fn matches_all(pat: Pattern) -> bool {
+    match pat {
+        Pattern::Wildcard(_) => true,
+        Pattern::Variable(_, _) => true,
+        _ => false,
     }
 }
