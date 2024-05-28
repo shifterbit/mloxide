@@ -241,20 +241,21 @@ pub fn typecheck(
             }
         }
         ASTNode::VariableDeclaration {
-            variable,
+            pattern,
             value,
             type_declaration: _,
             location,
         } => {
-            let val_node = typecheck(*value.clone(), symbol_table, type_table, errors);
-            let val_type = val_node.get_type();
-            type_table.insert(&variable, val_type);
-            TypedASTNode::VariableDeclaration {
-                variable,
-                value: Box::new(val_node),
-                node_type: Type::Unit,
-                location,
-            }
+            todo!();
+            // let val_node = typecheck(*value.clone(), symbol_table, type_table, errors);
+            // let val_type = val_node.get_type();
+            // type_table.insert(&variable, val_type);
+            // TypedASTNode::VariableDeclaration {
+            //     variable,
+            //     value: Box::new(val_node),
+            //     node_type: Type::Unit,
+            //     location,
+            // }
         }
         ASTNode::Declarations(nodes, location) => {
             let mut declarations: Vec<TypedASTNode> = Vec::new();

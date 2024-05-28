@@ -65,6 +65,7 @@ pub enum TokenType {
     RightArrow,
     LeftArrow,
     Comma,
+    Underscore,
 
     // Multi Character Tokens
     EqualEqual,
@@ -129,6 +130,7 @@ impl Display for TokenType {
             TokenType::LeftArrowEqual => write!(f, "LeftArrowEqual"),
             TokenType::Comma => write!(f, "Comma"),
             TokenType::Colon => write!(f, "Colon"),
+            TokenType::Underscore => write!(f, "Underscore"),
         }
     }
 }

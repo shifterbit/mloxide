@@ -1,4 +1,4 @@
-use crate::ast::{ASTNode, Operator};
+use crate::ast::{ASTNode, Operator, Pattern};
 use crate::error_reporting::CompilerError;
 use crate::lexer::Lexer;
 use crate::source_location::{SourceLocation, SourcePosition};
@@ -137,17 +137,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
         return ASTNode::Error(location);
     }
 
-    let id_tok = lexer.peek();
-    let variable_name = match id_tok.clone().token_type {
-        TokenType::Identifier(name) => name,
-        _ => {
-            let location = lexer.previous().source_location();
-            let error_val = ParseError::new("expected identifier after val", location, None, None);
-            errors.push(error_val);
-            return ASTNode::Error(location);
-        }
-    };
-    lexer.consume();
+    let pat = pattern(lexer, errors);
 
     let mut type_declaration = None;
     let mut type_name: String = String::new();
@@ -161,25 +151,21 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
             type_name = id.clone();
             let type_decl = ASTNode::TypeVariable(id, type_tok_loc);
             type_declaration = Some(Box::new(type_decl));
+            lexer.consume();
         } else {
             let location = lexer.previous().source_location();
-            let error_val = ParseError::new(
-                "expected type declaration after :",
-                location,
-                None,
-                None,
-            );
+            let error_val =
+                ParseError::new("expected type declaration after :", location, None, None);
             errors.push(error_val);
             return ASTNode::Error(location);
         }
     }
-    lexer.consume();
 
     let eq_tok = lexer.peek();
     if eq_tok.token_type != TokenType::Equal {
         let location = lexer.previous().source_location();
         let message = if type_declaration.is_none() {
-            format!("'=' expected after {variable_name}")
+            ("'=' expected after pattern").to_string()
         } else {
             format!("= expected after {type_name}")
         };
@@ -214,7 +200,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
     let location = SourceLocation::new(val_tok_loc.start, semicolon_loc.end);
 
     ASTNode::VariableDeclaration {
-        variable: variable_name,
+        pattern: pat,
         value: Box::new(assigned_expr),
         location,
         type_declaration,
@@ -573,4 +559,97 @@ fn get_operator(token_type: TokenType) -> Operator {
         TokenType::LeftArrowEqual => Operator::LessEqual,
         _ => panic!("Invalid Operator"),
     }
+}
+
+fn pattern(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Pattern {
+    match lexer.peek().token_type {
+        TokenType::LeftParen => parse_tuple(lexer, errors),
+        TokenType::Underscore => parse_wildcard(lexer, errors),
+        TokenType::Identifier(_) => parse_identifier(lexer, errors),
+        _ => panic!("Invalid Pattern {}", lexer.peek()),
+    }
+}
+
+fn parse_tuple(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Pattern {
+    let open_paren = lexer.peek();
+    let open_paren_location = open_paren.source_location();
+    let start = open_paren_location.start;
+    lexer.consume();
+
+    if lexer.peek().token_type == TokenType::RightParen {
+        let closing = lexer.consume();
+        return Pattern::Wildcard(SourceLocation::new(start, closing.source_location().end));
+    }
+
+    let pat = pattern(lexer, errors);
+    let mut patterns: Vec<Pattern> = vec![pat.clone()];
+
+    // We look to see in case this might be a tuple
+    while lexer.peek().token_type == TokenType::Comma {
+        lexer.consume();
+        if lexer.peek().token_type == TokenType::RightParen {
+            let error = ParseError::new(
+                "expected a pattern before closing parenthesis",
+                lexer.peek().source_location(),
+                None,
+                None,
+            );
+            errors.push(error);
+            return Pattern::Error(SourceLocation::new(
+                start,
+                lexer.peek().source_location().end,
+            ));
+        }
+        println!("innser pattern {}", lexer.peek());
+        let next = pattern(lexer, errors);
+        patterns.push(next);
+    }
+
+    let closing_paren = lexer.peek();
+    let end = closing_paren.source_location().end;
+
+    if closing_paren.token_type != TokenType::RightParen {
+        let error = ParseError::new(
+            "Expected closing parenthesis",
+            lexer.peek().source_location(),
+            None,
+            None,
+        );
+        errors.push(error);
+        return Pattern::Error(SourceLocation::new(start, end));
+    }
+
+    lexer.consume();
+    if patterns.len() > 1 {
+        Pattern::Tuple(patterns, SourceLocation::new(start, end))
+    } else {
+        pat
+    }
+}
+
+fn parse_wildcard(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Pattern {
+    let id_tok = lexer.consume();
+    match id_tok.clone().token_type {
+        TokenType::Underscore => Pattern::Wildcard(id_tok.source_location()),
+        _ => {
+            let location = lexer.previous().source_location();
+            let error_val = ParseError::new("expected a pattern here", location, None, None);
+            errors.push(error_val);
+            return Pattern::Error(location);
+        }
+    }
+}
+
+fn parse_identifier(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Pattern {
+    let id_tok = lexer.consume();
+    let variable_name = match id_tok.clone().token_type {
+        TokenType::Identifier(name) => name,
+        _ => {
+            let location = lexer.previous().source_location();
+            let error_val = ParseError::new("expected a pattern here", location, None, None);
+            errors.push(error_val);
+            return Pattern::Error(location);
+        }
+    };
+    Pattern::Variable(variable_name, id_tok.source_location())
 }
