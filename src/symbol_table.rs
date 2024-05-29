@@ -1,8 +1,9 @@
-use std::{
-    collections::HashMap,
-};
+use std::collections::HashMap;
 
-use crate::ast::ASTNode;
+use crate::{
+    ast::AnnotatedASTNode,
+    pattern::{to_var, PatternMatrix},
+};
 
 #[derive(Debug, Clone)]
 pub struct SymbolTable<T> {
@@ -55,61 +56,78 @@ where
     }
 }
 
-pub fn resolve_symbols(ast: &mut ASTNode, symbol_table: &mut SymbolTable<ASTNode>) {
+pub fn resolve_symbols(
+    ast: &mut AnnotatedASTNode,
+    symbol_table: &mut SymbolTable<AnnotatedASTNode>,
+) {
     match ast {
-        ASTNode::Declarations(nodes, _) => {
+        AnnotatedASTNode::Declarations(nodes, _, _) => {
             for node in nodes {
                 resolve_symbols(node, symbol_table)
             }
         }
-        ASTNode::Let {
+        AnnotatedASTNode::Let {
             declarations,
             expr: _,
             location: _,
             ref mut environment,
+            node_id: _,
         } => {
             *environment = Some(Box::new(symbol_table.enter_scope()));
             for declaration in declarations {
                 resolve_symbols(declaration, environment.as_mut().unwrap());
             }
         }
-        ASTNode::VariableDeclaration {
-            pattern: _,
+        AnnotatedASTNode::VariableDeclaration {
+            pattern,
             value,
             type_declaration: _,
             location: _,
+            node_id: _,
         } => {
-            todo!();
-           // symbol_table.insert(variable, *value.to_owned());
+            let annotated_astnode = *value.clone();
+            let matrix = PatternMatrix::new(vec![pattern.clone()], &annotated_astnode);
+            let act = matrix.action();
+            for (pat, node_id) in act.bindings {
+                let name = to_var(pat);
+                let entry = value.lookup(node_id).unwrap();
+                symbol_table.insert(&name, entry);
+            }
+            println!("{:#?}", symbol_table);
+
+            // symbol_table.insert(variable, *value.to_owned());
             resolve_symbols(value, symbol_table);
         }
-        ASTNode::If {
+        AnnotatedASTNode::If {
             condition,
             if_body,
             else_body,
             location: _,
+            node_id: _,
         } => {
             resolve_symbols(condition, symbol_table);
             resolve_symbols(if_body, symbol_table);
             resolve_symbols(else_body, symbol_table);
         }
-        ASTNode::Binary {
+        AnnotatedASTNode::Binary {
             op: _,
             lhs,
             rhs,
             location: _,
+            node_id: _,
         } => {
             resolve_symbols(lhs, symbol_table);
             resolve_symbols(rhs, symbol_table);
         }
-        ASTNode::Unary {
+        AnnotatedASTNode::Unary {
             op: _,
             expr,
             location: _,
+            node_id: _,
         } => {
             resolve_symbols(expr, symbol_table);
         }
-        ASTNode::Grouping(Some(node), _) => resolve_symbols(node, symbol_table),
+        AnnotatedASTNode::Grouping(Some(node), _, _) => resolve_symbols(node, symbol_table),
         _ => {}
     }
 }

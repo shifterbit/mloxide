@@ -1,4 +1,4 @@
-use std::{fs, os::fd::AsFd};
+use std::fs;
 
 use ast::{ASTNode, AnnotatedASTNode};
 use error_reporting::errors_from_file;
@@ -8,7 +8,6 @@ use parser::parse;
 use symbol_table::{resolve_symbols, SymbolTable};
 use type_checker::check;
 
-use crate::pattern::PatternMatrix;
 
 pub mod ast;
 pub mod error_reporting;
@@ -26,17 +25,12 @@ pub fn run_file(filepath: &str) {
     let source = fs::read_to_string(filepath).unwrap();
     let mut lexer = Lexer::new(&source);
     let ast = parse(&mut lexer);
-    let annotated_ast = ast.unwrap().annotate();
-    if let AnnotatedASTNode::Declarations(decs, _, _) = annotated_ast {
-        let pm = PatternMatrix::from_ast(&decs[0].clone());
-        println!("{:#?}", pm);
-    }
-    return;
     match ast {
-        Ok(ref mut a) => {
-            let mut symbol_table: SymbolTable<ASTNode> = SymbolTable::new();
-            resolve_symbols(a, &mut symbol_table);
-            let typed_ast = check(a.clone(), &symbol_table);
+        Ok(a) => {
+            let mut annotated_ast = a.annotate();
+            let mut symbol_table: SymbolTable<AnnotatedASTNode> = SymbolTable::new();
+            resolve_symbols(&mut annotated_ast, &mut symbol_table);
+            let typed_ast = check(annotated_ast, &symbol_table);
             match typed_ast {
                 Ok(tast) => {
                     let mut value_table: SymbolTable<Value> = SymbolTable::new();
@@ -48,7 +42,7 @@ pub fn run_file(filepath: &str) {
                 }
             }
         }
-        Err((errors, _ast)) => {
+        Err((errors, _)) => {
             errors_from_file(filepath, &source, errors);
         }
     }

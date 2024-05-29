@@ -1,8 +1,4 @@
-use std::{
-    collections::HashMap,
-    fmt::{self, Display, Pointer},
-    ops::Add,
-};
+use std::fmt::{self, Display};
 
 use crate::{
     source_location::{SourceLocation, SourcePosition},
@@ -398,7 +394,7 @@ impl AnnotatedASTNode {
                 value,
                 type_declaration: _,
                 location: _,
-                node_id,
+                node_id: _,
             } => {
                 if self.node_id() == id {
                     Some(self.clone())
@@ -429,7 +425,7 @@ impl AnnotatedASTNode {
                 op: _,
                 expr,
                 location: _,
-                node_id,
+                node_id: _,
             } => {
                 if id == self.node_id() {
                     Some(self.clone())
@@ -442,7 +438,7 @@ impl AnnotatedASTNode {
                 if_body,
                 else_body,
                 location: _,
-                node_id,
+                node_id: _,
             } => {
                 if id == self.node_id() {
                     return Some(self.clone());

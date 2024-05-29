@@ -9,6 +9,5 @@ fn main() {
         println!("Usage: {name} <path to file>")
     } else {
         mloxide::run_file(&args[1]);
-        
     }
 }

@@ -1,7 +1,8 @@
-use std::fmt::{self, Display};
+use std::fmt::Display;
+use std::fmt;
 
 use crate::{
-    ast::{ASTNode, Operator, TypedASTNode},
+    ast::{AnnotatedASTNode, Operator, TypedASTNode},
     error_reporting::CompilerError,
     source_location::{SourceLocation, SourcePosition},
     symbol_table::SymbolTable,
@@ -59,8 +60,8 @@ impl Display for TypeError {
 }
 
 pub fn check(
-    ast: ASTNode,
-    symbol_table: &SymbolTable<ASTNode>,
+    ast: AnnotatedASTNode,
+    symbol_table: &SymbolTable<AnnotatedASTNode>,
 ) -> Result<TypedASTNode, TypeErrorList> {
     let mut type_table: SymbolTable<Type> = SymbolTable::new();
     let mut errors: TypeErrorList = Vec::new();
@@ -73,18 +74,18 @@ pub fn check(
 }
 
 pub fn typecheck(
-    node: ASTNode,
-    symbol_table: &SymbolTable<ASTNode>,
+    node: AnnotatedASTNode,
+    symbol_table: &SymbolTable<AnnotatedASTNode>,
     type_table: &mut SymbolTable<Type>,
     errors: &mut TypeErrorList,
 ) -> TypedASTNode {
-    match node {
-        ASTNode::Error(loc) => TypedASTNode::Error(loc),
-        ASTNode::Int(n, loc) => TypedASTNode::Int(n, loc),
-        ASTNode::Float(n, loc) => TypedASTNode::Float(n, loc),
-        ASTNode::Bool(b, loc) => TypedASTNode::Bool(b, loc),
-        ASTNode::TypeVariable(_, _) => todo!(),
-        ASTNode::Identifier(i, loc) => match &symbol_table.lookup(&i) {
+    let typed_astnode = match node {
+        AnnotatedASTNode::Error(loc, _) => TypedASTNode::Error(loc),
+        AnnotatedASTNode::Int(n, loc, _) => TypedASTNode::Int(n, loc),
+        AnnotatedASTNode::Float(n, loc, _) => TypedASTNode::Float(n, loc),
+        AnnotatedASTNode::Bool(b, loc, _) => TypedASTNode::Bool(b, loc),
+        AnnotatedASTNode::TypeVariable(_, _, _) => todo!(),
+        AnnotatedASTNode::Identifier(i, loc, _) => match &symbol_table.lookup(&i) {
             Some(_) => {
                 let expr_type = type_table.lookup(&i).unwrap_or(Type::Unknown);
 
@@ -100,7 +101,7 @@ pub fn typecheck(
                 location: loc,
             },
         },
-        ASTNode::Grouping(expr, loc) => match expr {
+        AnnotatedASTNode::Grouping(expr, loc, _) => match expr {
             Some(exp) => {
                 let typecheck = typecheck(*exp, symbol_table, type_table, errors);
                 let typed_expr = typecheck;
@@ -117,11 +118,12 @@ pub fn typecheck(
                 location: loc,
             },
         },
-        ASTNode::Binary {
+        AnnotatedASTNode::Binary {
             op,
             lhs,
             rhs,
             location,
+            node_id: _,
         } => {
             let typed_lhs = typecheck(*lhs, symbol_table, type_table, errors);
             let typed_rhs = typecheck(*rhs, symbol_table, type_table, errors);
@@ -156,7 +158,12 @@ pub fn typecheck(
                 location,
             }
         }
-        ASTNode::Unary { op, expr, location } => {
+        AnnotatedASTNode::Unary {
+            op,
+            expr,
+            location,
+            node_id: _,
+        } => {
             let typed_expr = typecheck(*expr, symbol_table, type_table, errors);
             let e_type = typed_expr.get_type();
             let expected_types = allowed_infix_op_type(op, e_type.clone());
@@ -189,11 +196,12 @@ pub fn typecheck(
                 location,
             }
         }
-        ASTNode::If {
+        AnnotatedASTNode::If {
             condition,
             if_body,
             else_body,
             location,
+            node_id: _,
         } => {
             let condition_typed = typecheck(*condition, symbol_table, type_table, errors);
             let condition_type = condition_typed.get_type();
@@ -240,11 +248,12 @@ pub fn typecheck(
                 location,
             }
         }
-        ASTNode::VariableDeclaration {
-            pattern,
-            value,
+        AnnotatedASTNode::VariableDeclaration {
+            pattern: _,
+            value: _,
             type_declaration: _,
-            location,
+            location: _,
+            node_id: _,
         } => {
             todo!();
             // let val_node = typecheck(*value.clone(), symbol_table, type_table, errors);
@@ -257,7 +266,7 @@ pub fn typecheck(
             //     location,
             // }
         }
-        ASTNode::Declarations(nodes, location) => {
+        AnnotatedASTNode::Declarations(nodes, location, _) => {
             let mut declarations: Vec<TypedASTNode> = Vec::new();
             for node in nodes {
                 let declaration = typecheck(node, symbol_table, type_table, errors);
@@ -274,7 +283,7 @@ pub fn typecheck(
                 location,
             }
         }
-        ASTNode::Tuple(nodes, location) => {
+        AnnotatedASTNode::Tuple(nodes, location, _) => {
             let mut exprs: Vec<TypedASTNode> = Vec::new();
             for node in nodes {
                 let expr = typecheck(node, symbol_table, type_table, errors);
@@ -287,11 +296,12 @@ pub fn typecheck(
                 location,
             }
         }
-        ASTNode::Let {
+        AnnotatedASTNode::Let {
             declarations,
             expr,
             location,
             environment,
+            node_id: _,
         } => {
             let mut scoped_type_table = type_table.enter_scope();
             let mut typed_declarations: Vec<TypedASTNode> = Vec::new();
@@ -321,7 +331,8 @@ pub fn typecheck(
                 node_type: full_type,
             }
         }
-    }
+    };
+    typed_astnode
 }
 
 fn binary_return_type(operator: Operator, left_type: Type, right_type: Type) -> Type {

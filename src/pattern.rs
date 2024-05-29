@@ -1,63 +1,64 @@
-use std::{collections::HashMap, os::fd::AsFd};
+use crate::ast::{AnnotatedASTNode, Pattern};
 
-use crate::{
-    ast::{ASTNode, AnnotatedASTNode, Pattern},
-    error_reporting::CompilerError,
-    lexer::Lexer,
-    parser::ParseError,
-    source_location::{SourceLocation, SourcePosition},
-    token::TokenType,
-};
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Action {
-    bindings: Vec<(Pattern, usize)>,
+    pub bindings: Vec<(Pattern, usize)>,
 }
-#[derive(Debug)]
+
+#[derive(Debug, Clone)]
 pub struct PatternMatrix {
     clauses: Vec<(Vec<Pattern>, Action)>,
     occurences: (usize, Vec<usize>),
 }
 
 impl PatternMatrix {
-    pub fn from_ast(node: &AnnotatedASTNode) -> PatternMatrix {
-        match node {
-            AnnotatedASTNode::VariableDeclaration {
-                pattern,
-                type_declaration,
-                value,
-                location,
-                node_id,
-            } => {
-                let top_level = value.node_id();
-                let os = occurences(value);
+    pub fn action(&self) -> Action {
+        let fst = self.clauses.clone();
+        let vec = fst.clone();
+        let pair = vec[0].clone();
+        pair.1
+    }
+    pub fn new(patterns: Vec<Pattern>, target: &AnnotatedASTNode) -> PatternMatrix {
+        let top_level = target.node_id();
+        let os = occurences(&target);
+        let mut clauses = vec![];
+        for pattern in patterns {
+            let row = match pattern {
+                Pattern::Wildcard(_) => vec![pattern.clone()],
+                Pattern::Variable(_, _) => vec![pattern.clone()],
+                Pattern::Int(_, _) => vec![pattern.clone()],
+                Pattern::Float(_, _) => vec![pattern.clone()],
+                Pattern::Tuple(inner, _) => inner.clone(),
+                Pattern::Error(_) => todo!(),
+            };
+            let bindings: Vec<(Pattern, usize)> = if row.len() == 1 {
+                vec![(row[0].clone(), top_level)]
+            } else {
+                row.iter()
+                    .zip(os.clone())
+                    .map(|(pat, size)| (pat.clone(), size))
+                    .collect()
+            };
 
-                let row = match pattern {
-                    Pattern::Wildcard(_) => vec![pattern.clone()],
-                    Pattern::Variable(_, _) => vec![pattern.clone()],
-                    Pattern::Int(_, _) => vec![pattern.clone()],
-                    Pattern::Float(_, _) => vec![pattern.clone()],
-                    Pattern::Tuple(inner, _) => inner.clone(),
-                    Pattern::Error(_) => todo!(),
-                };
-                let bindings: Vec<(Pattern, usize)> = if row.len() == 1 {
-                    vec![(row[0].clone(), top_level)]
-                } else {
-                    row.iter()
-                        .zip(os.clone())
-                        .map(|(pat, size)| (pat.clone(), size))
-                        .collect()
-                };
-
-                let action = Action { bindings };
-                let clauses = vec![(row.clone(), action)];
-                PatternMatrix {
-                    clauses,
-                    occurences: (top_level, os),
-                }
-            }
-            _ => todo!(),
+            let action = Action { bindings };
+            let clause = (row.clone(), action);
+            clauses.push(clause);
         }
+
+        PatternMatrix {
+            clauses,
+            occurences: (top_level, os),
+        }
+    }
+}
+pub fn to_var(pat: Pattern) -> String {
+    match pat {
+        Pattern::Wildcard(_) => "_".to_string(),
+        Pattern::Variable(s, _) => s,
+        Pattern::Int(_, _) => todo!(),
+        Pattern::Float(_, _) => todo!(),
+        Pattern::Tuple(_inner, _) => todo!(),
+        Pattern::Error(_) => todo!(),
     }
 }
 
