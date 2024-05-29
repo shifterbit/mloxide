@@ -91,7 +91,8 @@ pub fn resolve_symbols(
             for (pat, node_id) in act.bindings {
                 let name = to_var(pat);
                 let entry = value.lookup(node_id).unwrap();
-                symbol_table.insert(&name, entry);
+                let node = resolve_node(entry, symbol_table);
+                symbol_table.insert(&name, node);
             }
             println!("{:#?}", symbol_table);
 
@@ -129,5 +130,29 @@ pub fn resolve_symbols(
         }
         AnnotatedASTNode::Grouping(Some(node), _, _) => resolve_symbols(node, symbol_table),
         _ => {}
+    }
+}
+
+fn resolve_node(
+    node: AnnotatedASTNode,
+    symbol_table: &mut SymbolTable<AnnotatedASTNode>,
+) -> AnnotatedASTNode {
+    match node {
+        AnnotatedASTNode::Tuple(decs, loc, id) => {
+            let new_decs: Vec<AnnotatedASTNode> = decs
+                .iter()
+                .map(|dec| resolve_node(dec.clone(), symbol_table))
+                .collect();
+
+            AnnotatedASTNode::Tuple(new_decs, loc, id)
+        }
+        AnnotatedASTNode::Identifier(s, loc, id) => {
+            if let Some(entry) = symbol_table.lookup(&s) {
+                entry
+            } else {
+                AnnotatedASTNode::Identifier(s, loc, id)
+            }
+        }
+        n => n,
     }
 }
