@@ -62,6 +62,10 @@ in if z <= x
   - [x] Global Variables
   - [x] Local Variables 
 - [ ] Pattern Matching
+  - [x] Wildcard/Variable Matching
+  - [ ] Matching Literal Values
+  - [ ] Matching Constructors
+  - [ ] Nested Patterns
 - [x] Type Checking
 - [x] Type System
   - [x] Type Inference
