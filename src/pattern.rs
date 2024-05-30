@@ -1,13 +1,16 @@
 use crate::ast::{AnnotatedASTNode, Pattern};
 
+type Binding = (Pattern, usize);
+type Clause = (Vec<Pattern>, Action);
+
 #[derive(Debug, Clone)]
 pub struct Action {
-    pub bindings: Vec<(Pattern, usize)>,
+    pub bindings: Vec<Binding>,
 }
 
 #[derive(Debug, Clone)]
 pub struct PatternMatrix {
-    clauses: Vec<(Vec<Pattern>, Action)>,
+    clauses: Vec<Clause>,
     occurences: (usize, Vec<usize>),
 }
 
@@ -18,10 +21,11 @@ impl PatternMatrix {
         let pair = vec[0].clone();
         pair.1
     }
+
     pub fn new(patterns: Vec<Pattern>, target: &AnnotatedASTNode) -> PatternMatrix {
         let top_level = target.node_id();
         let os = occurences(&target);
-        let mut clauses = vec![];
+        let mut clauses: Vec<Clause> = vec![];
         for pattern in patterns {
             let row = match pattern {
                 Pattern::Wildcard(_) => vec![pattern.clone()],
@@ -31,7 +35,7 @@ impl PatternMatrix {
                 Pattern::Tuple(inner, _) => inner.clone(),
                 Pattern::Error(_) => todo!(),
             };
-            let bindings: Vec<(Pattern, usize)> = if row.len() == 1 {
+            let bindings: Vec<Binding> = if row.len() == 1 {
                 vec![(row[0].clone(), top_level)]
             } else {
                 row.iter()
@@ -48,6 +52,29 @@ impl PatternMatrix {
         PatternMatrix {
             clauses,
             occurences: (top_level, os),
+        }
+    }
+    pub fn default(&self, column: usize) -> PatternMatrix {
+        let mut clauses: Vec<Clause> = vec![];
+        for row in &self.clauses {
+            let (pats, _) = row.clone();
+            if irrefutable(&pats[column]) {
+                clauses.push(row.clone());
+            }
+        }
+
+        PatternMatrix {
+            clauses,
+            occurences: self.occurences.clone(),
+        }
+    }
+    pub fn swap(&mut self, a: usize, b: usize) {
+        let (top, children) = &mut self.occurences;
+        children.swap(a, b);
+        for row in &mut self.clauses {
+            let (pats, _) = row;
+            pats.swap(a, b);
+            
         }
     }
 }
@@ -69,10 +96,18 @@ fn occurences(node: &AnnotatedASTNode) -> Vec<usize> {
         others => vec![others.node_id()],
     }
 }
-fn matches_all(pat: Pattern) -> bool {
+fn irrefutable(pat: &Pattern) -> bool {
     match pat {
         Pattern::Wildcard(_) => true,
         Pattern::Variable(_, _) => true,
+        Pattern::Tuple(pats, _) => {
+            for pat in pats {
+                if irrefutable(pat) {
+                    return true;
+                }
+            }
+            return false;
+        }
         _ => false,
     }
 }
