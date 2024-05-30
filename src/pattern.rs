@@ -24,7 +24,7 @@ impl PatternMatrix {
 
     pub fn new(patterns: Vec<Pattern>, target: &AnnotatedASTNode) -> PatternMatrix {
         let top_level = target.node_id();
-        let os = occurences(&target);
+        let os = occurences(target);
         let mut clauses: Vec<Clause> = vec![];
         for pattern in patterns {
             let row = match pattern {
@@ -69,7 +69,7 @@ impl PatternMatrix {
         }
     }
     pub fn swap(&mut self, a: usize, b: usize) {
-        let (top, children) = &mut self.occurences;
+        let (_, children) = &mut self.occurences;
         children.swap(a, b);
         for row in &mut self.clauses {
             let (pats, _) = row;
@@ -106,7 +106,7 @@ fn irrefutable(pat: &Pattern) -> bool {
                     return true;
                 }
             }
-            return false;
+            false
         }
         _ => false,
     }

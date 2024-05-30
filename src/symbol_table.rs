@@ -86,7 +86,7 @@ pub fn resolve_symbols(
             node_id: _,
         } => {
             let annotated_astnode = *value.clone();
-            let mut matrix = PatternMatrix::new(vec![pattern.clone()], &annotated_astnode);
+            let matrix = PatternMatrix::new(vec![pattern.clone()], &annotated_astnode);
             let act = matrix.action();
             for (pat, node_id) in act.bindings {
                 let name = to_var(pat);

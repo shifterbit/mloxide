@@ -634,7 +634,7 @@ fn parse_wildcard(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Pattern {
             let location = lexer.previous().source_location();
             let error_val = ParseError::new("expected a pattern here", location, None, None);
             errors.push(error_val);
-            return Pattern::Error(location);
+            Pattern::Error(location)
         }
     }
 }

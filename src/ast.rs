@@ -155,11 +155,7 @@ impl ASTNode {
             } => {
                 node_id[0] += 1;
 
-                let type_declaration_annotated = if let Some(node) = type_declaration {
-                    Some(Box::new(node.annotate_node(node_id)))
-                } else {
-                    None
-                };
+                let type_declaration_annotated = type_declaration.as_ref().map(|node| Box::new(node.annotate_node(node_id)));
                 let value = Box::new(value.annotate_node(node_id));
                 AnnotatedASTNode::VariableDeclaration {
                     pattern: pattern.clone(),
@@ -250,44 +246,44 @@ impl ASTNode {
 impl SourcePosition for ASTNode {
     fn source_location(&self) -> SourceLocation {
         match self {
-            ASTNode::Error(location) => location.clone(),
-            ASTNode::Int(_, location) => location.clone(),
-            ASTNode::Float(_, location) => location.clone(),
-            ASTNode::Bool(_, location) => location.clone(),
-            ASTNode::Identifier(_, location) => location.clone(),
-            ASTNode::TypeVariable(_, location) => location.clone(),
-            ASTNode::Grouping(_, location) => location.clone(),
-            ASTNode::Tuple(_, location) => location.clone(),
-            ASTNode::Declarations(_, location) => location.clone(),
+            ASTNode::Error(location) => *location,
+            ASTNode::Int(_, location) => *location,
+            ASTNode::Float(_, location) => *location,
+            ASTNode::Bool(_, location) => *location,
+            ASTNode::Identifier(_, location) => *location,
+            ASTNode::TypeVariable(_, location) => *location,
+            ASTNode::Grouping(_, location) => *location,
+            ASTNode::Tuple(_, location) => *location,
+            ASTNode::Declarations(_, location) => *location,
             ASTNode::VariableDeclaration {
                 pattern: _,
                 value: _,
                 type_declaration: _,
                 location,
-            } => location.clone(),
+            } => *location,
             ASTNode::Binary {
                 op: _,
                 lhs: _,
                 rhs: _,
                 location,
-            } => location.clone(),
+            } => *location,
             ASTNode::Unary {
                 op: _,
                 expr: _,
                 location,
-            } => location.clone(),
+            } => *location,
             ASTNode::If {
                 condition: _,
                 if_body: _,
                 else_body: _,
                 location,
-            } => location.clone(),
+            } => *location,
             ASTNode::Let {
                 declarations: _,
                 expr: _,
                 location,
                 environment: _,
-            } => location.clone(),
+            } => *location,
         }
     }
 }
@@ -348,9 +344,9 @@ impl AnnotatedASTNode {
             | AnnotatedASTNode::Identifier(_, _, _)
             | AnnotatedASTNode::TypeVariable(_, _, _) => {
                 if id == self.node_id() {
-                    return Some(self.clone());
+                    Some(self.clone())
                 } else {
-                    return None;
+                    None
                 }
             }
 
@@ -365,7 +361,7 @@ impl AnnotatedASTNode {
             }
             AnnotatedASTNode::Tuple(items, _, _) => {
                 if id == self.node_id() {
-                    return Some(self.clone());
+                    Some(self.clone())
                 } else {
                     for i in items {
                         let inner_lookup = i.lookup(id);
@@ -373,12 +369,12 @@ impl AnnotatedASTNode {
                             return inner_lookup;
                         }
                     }
-                    return None;
+                    None
                 }
             }
             AnnotatedASTNode::Declarations(items, _, _) => {
                 if id == self.node_id() {
-                    return Some(self.clone());
+                    Some(self.clone())
                 } else {
                     for i in items {
                         let inner_lookup = i.lookup(id);
@@ -386,7 +382,7 @@ impl AnnotatedASTNode {
                             return inner_lookup;
                         }
                     }
-                    return None;
+                    None
                 }
             }
             AnnotatedASTNode::VariableDeclaration {
@@ -410,7 +406,7 @@ impl AnnotatedASTNode {
                 node_id: _,
             } => {
                 if id == self.node_id() {
-                    return Some(self.clone());
+                    Some(self.clone())
                 } else {
                     for i in [lhs, rhs] {
                         let inner_lookup = i.lookup(id);
@@ -418,7 +414,7 @@ impl AnnotatedASTNode {
                             return inner_lookup;
                         }
                     }
-                    return None;
+                    None
                 }
             }
             AnnotatedASTNode::Unary {
@@ -441,7 +437,7 @@ impl AnnotatedASTNode {
                 node_id: _,
             } => {
                 if id == self.node_id() {
-                    return Some(self.clone());
+                    Some(self.clone())
                 } else {
                     for i in [condition, if_body, else_body] {
                         let inner_lookup = i.lookup(id);
@@ -449,7 +445,7 @@ impl AnnotatedASTNode {
                             return inner_lookup;
                         }
                     }
-                    return None;
+                    None
                 }
             }
             AnnotatedASTNode::Let {
@@ -469,7 +465,7 @@ impl AnnotatedASTNode {
                         }
                     }
                 }
-                return expr.lookup(id);
+                expr.lookup(id)
             }
         }
     }
@@ -525,49 +521,49 @@ impl AnnotatedASTNode {
 impl SourcePosition for AnnotatedASTNode {
     fn source_location(&self) -> SourceLocation {
         match self {
-            AnnotatedASTNode::Error(location, _) => location.clone(),
-            AnnotatedASTNode::Int(_, location, _) => location.clone(),
-            AnnotatedASTNode::Float(_, location, _) => location.clone(),
-            AnnotatedASTNode::Bool(_, location, _) => location.clone(),
-            AnnotatedASTNode::Identifier(_, location, _) => location.clone(),
-            AnnotatedASTNode::TypeVariable(_, location, _) => location.clone(),
-            AnnotatedASTNode::Grouping(_, location, _) => location.clone(),
-            AnnotatedASTNode::Tuple(_, location, _) => location.clone(),
-            AnnotatedASTNode::Declarations(_, location, _) => location.clone(),
+            AnnotatedASTNode::Error(location, _) => *location,
+            AnnotatedASTNode::Int(_, location, _) => *location,
+            AnnotatedASTNode::Float(_, location, _) => *location,
+            AnnotatedASTNode::Bool(_, location, _) => *location,
+            AnnotatedASTNode::Identifier(_, location, _) => *location,
+            AnnotatedASTNode::TypeVariable(_, location, _) => *location,
+            AnnotatedASTNode::Grouping(_, location, _) => *location,
+            AnnotatedASTNode::Tuple(_, location, _) => *location,
+            AnnotatedASTNode::Declarations(_, location, _) => *location,
             AnnotatedASTNode::VariableDeclaration {
                 pattern: _,
                 value: _,
                 type_declaration: _,
                 location,
                 node_id: _,
-            } => location.clone(),
+            } => *location,
             AnnotatedASTNode::Binary {
                 op: _,
                 lhs: _,
                 rhs: _,
                 location,
                 node_id: _,
-            } => location.clone(),
+            } => *location,
             AnnotatedASTNode::Unary {
                 op: _,
                 expr: _,
                 location,
                 node_id: _,
-            } => location.clone(),
+            } => *location,
             AnnotatedASTNode::If {
                 condition: _,
                 if_body: _,
                 else_body: _,
                 location,
                 node_id: _,
-            } => location.clone(),
+            } => *location,
             AnnotatedASTNode::Let {
                 declarations: _,
                 expr: _,
                 location,
                 node_id: _,
                 environment: _,
-            } => location.clone(),
+            } => *location,
         }
     }
 }
@@ -702,63 +698,63 @@ impl TypedASTNode {
 impl SourcePosition for TypedASTNode {
     fn source_location(&self) -> SourceLocation {
         match self {
-            TypedASTNode::Error(location) => location.clone(),
-            TypedASTNode::Int(_, location) => location.clone(),
-            TypedASTNode::Float(_, location) => location.clone(),
-            TypedASTNode::Bool(_, location) => location.clone(),
+            TypedASTNode::Error(location) => *location,
+            TypedASTNode::Int(_, location) => *location,
+            TypedASTNode::Float(_, location) => *location,
+            TypedASTNode::Bool(_, location) => *location,
             TypedASTNode::Identifier {
                 name: _,
                 node_type: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedASTNode::Grouping {
                 expr: _,
                 node_type: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedASTNode::Tuple {
                 node_type: _,
                 exprs: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedASTNode::Declarations {
                 node_type: _,
                 declarations: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedASTNode::VariableDeclaration {
                 node_type: _,
                 variable: _,
                 value: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedASTNode::Binary {
                 node_type: _,
                 op: _,
                 lhs: _,
                 rhs: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedASTNode::Unary {
                 node_type: _,
                 op: _,
                 expr: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedASTNode::If {
                 node_type: _,
                 condition: _,
                 if_body: _,
                 else_body: _,
                 location,
-            } => location.clone(),
+            } => *location,
             TypedASTNode::Let {
                 node_type: _,
                 declarations: _,
                 expr: _,
                 location,
                 environment: _,
-            } => location.clone(),
+            } => *location,
         }
     }
 }
