@@ -21,6 +21,30 @@ impl PatternMatrix {
         let pair = vec[0].clone();
         pair.1
     }
+    pub fn is_empty(&self) -> bool {
+        self.clauses.is_empty()
+    }
+
+    pub fn first_clause(&self) -> Option<&Clause> {
+        self.clauses.first()
+    }
+
+    pub fn first_refutable_column(&self) -> Option<usize> {
+        let mut matrix: Vec<&Vec<Pattern>> = Vec::new();
+        for clause in &self.clauses {
+            let (row, _) = clause;
+            matrix.push(row);
+        }
+
+        for col in 0..matrix.len() {
+            for row in &matrix {
+                if !row[col].irrefutable() {
+                    return Some(col);
+                }
+            }
+        }
+        None
+    }
 
     pub fn new(patterns: Vec<Pattern>, target: &AnnotatedASTNode) -> PatternMatrix {
         let top_level = target.node_id();
@@ -58,7 +82,7 @@ impl PatternMatrix {
         let mut clauses: Vec<Clause> = vec![];
         for row in &self.clauses {
             let (pats, _) = row.clone();
-            if irrefutable(&pats[column]) {
+            if pats[column].contains_irrefutable() {
                 clauses.push(row.clone());
             }
         }
@@ -68,16 +92,46 @@ impl PatternMatrix {
             occurences: self.occurences.clone(),
         }
     }
-    pub fn swap(&mut self, a: usize, b: usize) {
-        let (_, children) = &mut self.occurences;
-        children.swap(a, b);
-        for row in &mut self.clauses {
-            let (pats, _) = row;
-            pats.swap(a, b);
-            
+    pub fn specialize(&self, pat: Pattern) -> PatternMatrix {
+        match pat {
+            Pattern::Wildcard(_) => self.clone(),
+            Pattern::Variable(_, _) => self.clone(),
+            Pattern::Tuple(_, _) => {
+                let mut clauses: Vec<Clause> = vec![];
+                todo!()
+            }
+            _ => panic!("Cannot Specialize on this pattern"),
         }
     }
+    pub fn swap(&self, a: usize, b: usize) -> PatternMatrix {
+        let mut swapped = self.clone();
+        let (_, children) = &mut swapped.occurences;
+        children.swap(a, b);
+        for row in &mut swapped.clauses {
+            let (pats, _) = row;
+            pats.swap(a, b);
+        }
+        swapped
+    }
 }
+
+fn match_pattern(matrix: &PatternMatrix) {
+    if matrix.is_empty() {
+        // Return Leaf Node for Failure
+        todo!()
+    }
+
+    if let Some(clause) = matrix.first_clause() {
+        if irrefutable_clause(clause) {
+            // Return Leaf Node For Success
+        }
+    }
+
+    if let Some(col) = matrix.first_refutable_column() {
+        let swapped = matrix.swap(col, 0);
+    }
+}
+
 pub fn to_var(pat: Pattern) -> String {
     match pat {
         Pattern::Wildcard(_) => "_".to_string(),
@@ -96,18 +150,38 @@ fn occurences(node: &AnnotatedASTNode) -> Vec<usize> {
         others => vec![others.node_id()],
     }
 }
-fn irrefutable(pat: &Pattern) -> bool {
-    match pat {
-        Pattern::Wildcard(_) => true,
-        Pattern::Variable(_, _) => true,
-        Pattern::Tuple(pats, _) => {
-            for pat in pats {
-                if irrefutable(pat) {
-                    return true;
-                }
-            }
-            false
+
+fn irrefutable_clause(clause: &Clause) -> bool {
+    let (pats, _) = clause;
+    for pat in pats {
+        if !pat.irrefutable() {
+            return false;
         }
-        _ => false,
+    }
+    true
+}
+
+impl Pattern {
+    fn irrefutable(&self) -> bool {
+        match self {
+            Pattern::Wildcard(_) => true,
+            Pattern::Variable(_, _) => true,
+            _ => false,
+        }
+    }
+    fn contains_irrefutable(&self) -> bool {
+        match self {
+            Pattern::Wildcard(_) => true,
+            Pattern::Variable(_, _) => true,
+            Pattern::Tuple(pats, _) => {
+                for pat in pats {
+                    if self.contains_irrefutable() {
+                        return true;
+                    }
+                }
+                false
+            }
+            _ => false,
+        }
     }
 }
