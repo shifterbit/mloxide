@@ -14,6 +14,19 @@ pub struct PatternMatrix {
     occurences: (usize, Vec<usize>),
 }
 
+#[derive(Debug)]
+pub enum Decision {
+    // Pattern is missing
+    Fail,
+    // The Pattern is Matched and the Action is performed
+    Success(Action),
+    // Checks if the Value fits any of the given patterns
+    // 1. variable to test
+    // 2. Patterns to test
+    // Decision to take if it fails
+    Switch(usize, Vec<Clause>, Option<Box<Decision>>),
+}
+
 impl PatternMatrix {
     pub fn action(&self) -> Action {
         let fst = self.clauses.clone();
@@ -115,21 +128,26 @@ impl PatternMatrix {
     }
 }
 
-fn match_pattern(matrix: &PatternMatrix) {
+pub fn match_pattern(matrix: &PatternMatrix) -> Decision {
     if matrix.is_empty() {
         // Return Leaf Node for Failure
-        todo!()
+        return Decision::Fail;
     }
 
     if let Some(clause) = matrix.first_clause() {
         if irrefutable_clause(clause) {
             // Return Leaf Node For Success
+            let (_, act) = clause;
+            return Decision::Success(act.clone());
         }
     }
 
     if let Some(col) = matrix.first_refutable_column() {
         let swapped = matrix.swap(col, 0);
+        todo!()
     }
+
+    Decision::Fail
 }
 
 pub fn to_var(pat: Pattern) -> String {
