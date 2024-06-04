@@ -566,6 +566,14 @@ fn pattern(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> Pattern {
         TokenType::LeftParen => parse_tuple(lexer, errors),
         TokenType::Underscore => parse_wildcard(lexer, errors),
         TokenType::Identifier(_) => parse_identifier(lexer, errors),
+        TokenType::Int(i) => {
+            let loc = lexer.consume().source_location();
+            Pattern::Int(i, loc)
+        }
+        TokenType::Float(i) => {
+            let loc = lexer.consume().source_location();
+            Pattern::Float(i, loc)
+        }
         _ => panic!("Invalid Pattern {}", lexer.peek()),
     }
 }
