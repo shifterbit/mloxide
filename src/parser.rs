@@ -163,17 +163,13 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
             type_declaration = Some(Box::new(type_decl));
         } else {
             let location = lexer.previous().source_location();
-            let error_val = ParseError::new(
-                "expected type declaration after :",
-                location,
-                None,
-                None,
-            );
+            let error_val =
+                ParseError::new("expected type declaration after :", location, None, None);
             errors.push(error_val);
             return ASTNode::Error(location);
         }
+        lexer.consume();
     }
-    lexer.consume();
 
     let eq_tok = lexer.peek();
     if eq_tok.token_type != TokenType::Equal {
