@@ -34,6 +34,7 @@ nix build
 if (2 + 2) == 4 
 then 2 
 else 9
+end
 ```
 ### Variables
 ```sml
@@ -44,6 +45,7 @@ let
 in if z <= x
    then x + y
    else y + z
+end
 ```
 
 ## Features
