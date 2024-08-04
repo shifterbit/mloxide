@@ -5,5 +5,7 @@ pkgs.mkShellNoCC {
     cargo
     rustfmt
     clippy
+    llvm_18
   ];
+  LLVM_SYS_18_PREFIX= "${pkgs.llvm_18.dev}";
 }
