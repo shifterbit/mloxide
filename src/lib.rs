@@ -9,6 +9,7 @@ use symbol_table::{resolve_symbols, SymbolTable};
 use type_checker::check;
 
 pub mod ast;
+pub mod compiler;
 pub mod error_reporting;
 pub mod interpreter;
 pub mod lexer;
