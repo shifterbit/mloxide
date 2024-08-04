@@ -75,4 +75,5 @@ end
 	- [x] Error Recovery
   - [x] Type Errors
     - [x] Error Reporting
+- [ ] Compiling Via LLVM 
 - [ ] Module System/Imports
