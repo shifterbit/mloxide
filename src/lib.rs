@@ -32,7 +32,8 @@ pub fn run_file(filepath: &str) {
             match typed_ast {
                 Ok(tast) => {
                     let mut value_table: SymbolTable<Value> = SymbolTable::new();
-                    let result = interpreter::eval_expression(tast, &mut value_table);
+                    let result = interpreter::eval_expression(tast.clone(), &mut value_table);
+                    compiler::compile(tast);
                     println!("{}", result);
                 }
                 Err(errors) => {
