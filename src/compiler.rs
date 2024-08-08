@@ -9,7 +9,7 @@ use llvm_sys::{
     LLVMBuilder, LLVMContext, LLVMModule,
 };
 
-use crate::{ast::TypedASTNode, types::Type};
+use crate::{ast::TypedASTNode, symbol_table::SymbolTable, types::Type};
 
 extern crate llvm_sys as llvm;
 
@@ -18,8 +18,9 @@ pub fn compile(root: TypedASTNode) {
         let context = llvm::core::LLVMContextCreate();
         let module = llvm::core::LLVMModuleCreateWithName(cstr("main").as_ptr());
         let builder = llvm::core::LLVMCreateBuilderInContext(context);
+        let mut table: SymbolTable<LLVMValueRef> = SymbolTable::new();
 
-        build_module(root, context, builder, module);
+        build_module(root, context, builder, module, &mut table);
         llvm::core::LLVMDumpModule(module);
         println!("dumped module");
 
@@ -39,9 +40,17 @@ fn build_module(
     context: *mut LLVMContext,
     builder: *mut LLVMBuilder,
     module: *mut LLVMModule,
+    table: &mut SymbolTable<LLVMValueRef>
 ) -> LLVMValueRef {
     unsafe {
         match node {
+            TypedASTNode::Identifier {
+                name,
+                node_type,
+                location,
+            } => {
+                table.lookup(&name).unwrap()
+            },
             TypedASTNode::VariableDeclaration {
                 variable,
                 value,
@@ -50,7 +59,8 @@ fn build_module(
             } => {
                 println!("building declaration");
                 let ty = generate_llvm_type(&value.get_type());
-                let val = build_module(*value, context, builder, module);
+                let val = build_module(*value, context, builder, module, table);
+                table.insert(&variable, val);
                 println!("built val and type");
                 let global = llvm::core::LLVMAddGlobal(module, ty, cstr(&variable).as_ptr());
                 LLVMSetInitializer(global, val);
@@ -64,7 +74,7 @@ fn build_module(
                 location: _,
             } => {
                 for dec in declarations {
-                    build_module(dec, context, builder, module);
+                    build_module(dec, context, builder, module, table);
                 }
                 let ty = llvm::core::LLVMVoidType();
                 llvm::core::LLVMConstNull(ty)
@@ -101,9 +111,38 @@ fn build_module(
                         let val = llvm::core::LLVMConstReal(ty, -v);
                         val
                     }
-                    _ => panic!()
+                    _ => panic!(),
                 }
             }
+            TypedASTNode::Binary {
+                node_type,
+                op,
+                lhs,
+                rhs,
+                location,
+            } => match op {
+                crate::ast::Operator::Add => {
+                    let left = build_module(*lhs, context, builder, module, table);
+                    let right = build_module(*rhs, context, builder, module, table);
+                    llvm::core::LLVMBuildAdd(builder, left, right, cstr("").as_ptr())
+                }
+                crate::ast::Operator::Subtract => {
+                    let left = build_module(*lhs, context, builder, module, table);
+                    let right = build_module(*rhs, context, builder, module, table);
+                    llvm::core::LLVMBuildSub(builder, left, right, cstr("").as_ptr())
+                }
+                crate::ast::Operator::Divide => {
+                    let left = build_module(*lhs, context, builder, module, table);
+                    let right = build_module(*rhs, context, builder, module, table);
+                    llvm::core::LLVMBuildSDiv(builder, left, right, cstr("").as_ptr())
+                }
+                crate::ast::Operator::Multiply => {
+                    let left = build_module(*lhs, context, builder, module, table);
+                    let right = build_module(*rhs, context, builder, module, table);
+                    llvm::core::LLVMBuildMul(builder, left, right, cstr("").as_ptr())
+                }
+                _ => todo!(),
+            },
             _ => todo!(),
         }
     }
