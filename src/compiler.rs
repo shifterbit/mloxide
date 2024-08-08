@@ -40,7 +40,7 @@ fn build_module(
     context: *mut LLVMContext,
     builder: *mut LLVMBuilder,
     module: *mut LLVMModule,
-    table: &mut SymbolTable<LLVMValueRef>
+    table: &mut SymbolTable<LLVMValueRef>,
 ) -> LLVMValueRef {
     unsafe {
         match node {
@@ -48,9 +48,7 @@ fn build_module(
                 name,
                 node_type,
                 location,
-            } => {
-                table.lookup(&name).unwrap()
-            },
+            } => table.lookup(&name).unwrap(),
             TypedASTNode::VariableDeclaration {
                 variable,
                 value,
@@ -143,6 +141,22 @@ fn build_module(
                 }
                 _ => todo!(),
             },
+            TypedASTNode::Tuple {
+                exprs,
+                node_type,
+                location,
+            } => {
+                let ty = generate_llvm_type(&node_type);
+                let mut val: Vec<_> = exprs
+                    .iter()
+                    .map(|node| build_module(node.clone(), context, builder, module, table))
+                    .collect::<_>();
+                llvm::core::LLVMConstStruct(
+                    val.as_mut_ptr() as *mut LLVMValueRef,
+                    val.len() as u32,
+                    0,
+                )
+            }
             _ => todo!(),
         }
     }
