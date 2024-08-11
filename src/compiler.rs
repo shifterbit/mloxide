@@ -4,9 +4,7 @@ use std::{
 };
 
 use llvm_sys::{
-    core::{LLVMContextDispose, LLVMDisposeBuilder, LLVMDisposeModule, LLVMSetInitializer},
-    prelude::{LLVMTypeRef, LLVMValueRef},
-    LLVMBuilder, LLVMContext, LLVMModule,
+    bit_writer::LLVMWriteBitcodeToFile, core::{LLVMContextDispose, LLVMDisposeBuilder, LLVMDisposeModule, LLVMSetInitializer}, prelude::{LLVMTypeRef, LLVMValueRef}, LLVMBuilder, LLVMContext, LLVMModule
 };
 
 use crate::{ast::TypedASTNode, symbol_table::SymbolTable, types::Type};
@@ -23,7 +21,7 @@ pub fn compile(root: TypedASTNode) {
         build_module(root, context, builder, module, &mut table);
         llvm::core::LLVMDumpModule(module);
         println!("dumped module");
-
+        LLVMWriteBitcodeToFile(module,cstr("main").as_ptr());
         LLVMDisposeBuilder(builder);
         LLVMDisposeModule(module);
         LLVMContextDispose(context);
@@ -48,7 +46,13 @@ fn build_module(
                 name,
                 node_type,
                 location,
-            } => table.lookup(&name).unwrap(),
+            } => {
+                let global = llvm::core::LLVMGetNamedGlobal(module, cstr(&name).as_ptr());
+                table.lookup(&name).unwrap();
+                global
+                
+                // let global = llvm::core::LLVMBuildGlobalString(B, Str, Name)
+            }
             TypedASTNode::VariableDeclaration {
                 variable,
                 value,
