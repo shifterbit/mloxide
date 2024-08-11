@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, process::exit};
 
 use ast::ASTNode;
 use error_reporting::errors_from_file;
@@ -23,29 +23,23 @@ pub mod types;
 pub fn run_file(filepath: &str) {
     let source = fs::read_to_string(filepath).unwrap();
     let mut lexer = Lexer::new(&source);
-    match parse(&mut lexer) {
-        Ok(ref mut ast) => {
-            match resolve_symbols(ast) {
-                Ok(sym_table) => match check(ast.clone(), &sym_table) {
-                    Ok(tast) => {
-                        let mut value_table: SymbolTable<Value> = SymbolTable::new();
-                        let result = interpreter::eval_expression(tast.clone(), &mut value_table);
-                        compiler::compile(tast);
-                        println!("{}", result);
-                    }
-                    Err(errors) => {
-                        errors_from_file(filepath, &source, errors);
-                    }
-                },
-                Err(name_errors) => {
-                    errors_from_file(filepath, &source, name_errors);
-                }
-            }
-        }
-        Err((errors, _ast)) => {
-            errors_from_file(filepath, &source, errors);
-        }
-    }
+    let mut ast: ASTNode = parse(&mut lexer).unwrap_or_else(|(errors, _)| {
+        errors_from_file(filepath, &source, errors);
+        exit(1);
+    });
+    let sym_table = resolve_symbols(&mut ast).unwrap_or_else(|errors| {
+        errors_from_file(filepath, &source, errors);
+        exit(1);
+    });
+
+    let typed_ast = check(ast, &sym_table).unwrap_or_else(|errors| {
+        errors_from_file(filepath, &source, errors);
+        exit(1);
+    });
+
+    let result = interpreter::eval(typed_ast.clone());
+    compiler::compile(typed_ast);
+    println!("{}", result);
 }
 
 pub fn generate_ast(source: &str) -> ASTNode {

@@ -54,6 +54,7 @@ where
 }
 
 pub type NameErrorList = Vec<NameError>;
+#[derive(Debug)]
 pub struct NameError {
     message: String,
     location: SourceLocation,
@@ -81,7 +82,7 @@ impl CompilerError for NameError {
         &self.message
     }
     fn error_type(&self) -> &str {
-        "SyntaxError"
+        "NameError"
     }
     fn details(&self) -> Option<Vec<(String, SourceLocation)>> {
         self.details.clone()
@@ -95,13 +96,11 @@ pub fn resolve_symbols(ast: &mut ASTNode) -> Result<SymbolTable<ASTNode>, NameEr
     let mut symbol_table: SymbolTable<ASTNode> = SymbolTable::new();
     let mut errors: NameErrorList = Vec::new();
     resolve_node(ast, &mut symbol_table, &mut errors);
-    if errors.len() > 0 {
-        Err(errors)
-    } else {
+    if errors.is_empty() {
         Ok(symbol_table)
+    } else {
+        Err(errors)
     }
-    
-    
 }
 pub fn resolve_node(
     ast: &mut ASTNode,
