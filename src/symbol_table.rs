@@ -1,8 +1,6 @@
-use std::{
-    collections::HashMap,
-};
+use std::collections::HashMap;
 
-use crate::ast::ASTNode;
+use crate::{ast::ASTNode, error_reporting::CompilerError, source_location::SourceLocation};
 
 #[derive(Debug, Clone)]
 pub struct SymbolTable<T> {
@@ -55,11 +53,65 @@ where
     }
 }
 
-pub fn resolve_symbols(ast: &mut ASTNode, symbol_table: &mut SymbolTable<ASTNode>) {
+pub type NameErrorList = Vec<NameError>;
+pub struct NameError {
+    message: String,
+    location: SourceLocation,
+    details: Option<Vec<(String, SourceLocation)>>,
+    explaination: Option<String>,
+}
+impl CompilerError for NameError {
+    fn new(
+        message: &str,
+        location: SourceLocation,
+        details: Option<Vec<(String, SourceLocation)>>,
+        explaination: Option<String>,
+    ) -> NameError {
+        NameError {
+            message: message.to_string(),
+            location,
+            details,
+            explaination,
+        }
+    }
+    fn location(&self) -> SourceLocation {
+        self.location
+    }
+    fn message(&self) -> &str {
+        &self.message
+    }
+    fn error_type(&self) -> &str {
+        "SyntaxError"
+    }
+    fn details(&self) -> Option<Vec<(String, SourceLocation)>> {
+        self.details.clone()
+    }
+    fn explaination(&self) -> Option<String> {
+        self.explaination.clone()
+    }
+}
+
+pub fn resolve_symbols(ast: &mut ASTNode) -> Result<SymbolTable<ASTNode>, NameErrorList> {
+    let mut symbol_table: SymbolTable<ASTNode> = SymbolTable::new();
+    let mut errors: NameErrorList = Vec::new();
+    resolve_node(ast, &mut symbol_table, &mut errors);
+    if errors.len() > 0 {
+        Err(errors)
+    } else {
+        Ok(symbol_table)
+    }
+    
+    
+}
+pub fn resolve_node(
+    ast: &mut ASTNode,
+    symbol_table: &mut SymbolTable<ASTNode>,
+    errors: &mut NameErrorList,
+) {
     match ast {
         ASTNode::Declarations(nodes, _) => {
             for node in nodes {
-                resolve_symbols(node, symbol_table)
+                resolve_node(node, symbol_table, errors);
             }
         }
         ASTNode::Let {
@@ -70,7 +122,7 @@ pub fn resolve_symbols(ast: &mut ASTNode, symbol_table: &mut SymbolTable<ASTNode
         } => {
             *environment = Some(Box::new(symbol_table.enter_scope()));
             for declaration in declarations {
-                resolve_symbols(declaration, environment.as_mut().unwrap());
+                resolve_node(declaration, environment.as_mut().unwrap(), errors);
             }
         }
         ASTNode::VariableDeclaration {
@@ -80,7 +132,7 @@ pub fn resolve_symbols(ast: &mut ASTNode, symbol_table: &mut SymbolTable<ASTNode
             location: _,
         } => {
             symbol_table.insert(variable, *value.to_owned());
-            resolve_symbols(value, symbol_table);
+            resolve_node(value, symbol_table, errors);
         }
         ASTNode::If {
             condition,
@@ -88,9 +140,9 @@ pub fn resolve_symbols(ast: &mut ASTNode, symbol_table: &mut SymbolTable<ASTNode
             else_body,
             location: _,
         } => {
-            resolve_symbols(condition, symbol_table);
-            resolve_symbols(if_body, symbol_table);
-            resolve_symbols(else_body, symbol_table);
+            resolve_node(condition, symbol_table, errors);
+            resolve_node(if_body, symbol_table, errors);
+            resolve_node(else_body, symbol_table, errors);
         }
         ASTNode::Binary {
             op: _,
@@ -98,17 +150,34 @@ pub fn resolve_symbols(ast: &mut ASTNode, symbol_table: &mut SymbolTable<ASTNode
             rhs,
             location: _,
         } => {
-            resolve_symbols(lhs, symbol_table);
-            resolve_symbols(rhs, symbol_table);
+            resolve_node(lhs, symbol_table, errors);
+            resolve_node(rhs, symbol_table, errors);
         }
         ASTNode::Unary {
             op: _,
             expr,
             location: _,
         } => {
-            resolve_symbols(expr, symbol_table);
+            resolve_node(expr, symbol_table, errors);
         }
-        ASTNode::Grouping(Some(node), _) => resolve_symbols(node, symbol_table),
+        ASTNode::Grouping(Some(node), _) => resolve_node(node, symbol_table, errors),
+        ASTNode::Identifier(variable, location) => {
+            if symbol_table.lookup(variable).is_none() {
+                let err = NameError::new(
+                    &format!("Undefined variable {}", variable),
+                    *location,
+                    None,
+                    None,
+                );
+                errors.push(err);
+            }
+        }
+        ASTNode::Tuple(nodes, _) => {
+            for node in nodes {
+                resolve_node(node, symbol_table, errors);
+            }
+        }
+
         _ => {}
     }
 }

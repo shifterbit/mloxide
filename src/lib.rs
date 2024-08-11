@@ -23,21 +23,22 @@ pub mod types;
 pub fn run_file(filepath: &str) {
     let source = fs::read_to_string(filepath).unwrap();
     let mut lexer = Lexer::new(&source);
-    let mut ast = parse(&mut lexer);
-    match ast {
-        Ok(ref mut a) => {
-            let mut symbol_table: SymbolTable<ASTNode> = SymbolTable::new();
-            resolve_symbols(a, &mut symbol_table);
-            let typed_ast = check(a.clone(), &symbol_table);
-            match typed_ast {
-                Ok(tast) => {
-                    let mut value_table: SymbolTable<Value> = SymbolTable::new();
-                    let result = interpreter::eval_expression(tast.clone(), &mut value_table);
-                    compiler::compile(tast);
-                    println!("{}", result);
-                }
-                Err(errors) => {
-                    errors_from_file(filepath, &source, errors);
+    match parse(&mut lexer) {
+        Ok(ref mut ast) => {
+            match resolve_symbols(ast) {
+                Ok(sym_table) => match check(ast.clone(), &sym_table) {
+                    Ok(tast) => {
+                        let mut value_table: SymbolTable<Value> = SymbolTable::new();
+                        let result = interpreter::eval_expression(tast.clone(), &mut value_table);
+                        compiler::compile(tast);
+                        println!("{}", result);
+                    }
+                    Err(errors) => {
+                        errors_from_file(filepath, &source, errors);
+                    }
+                },
+                Err(name_errors) => {
+                    errors_from_file(filepath, &source, name_errors);
                 }
             }
         }
