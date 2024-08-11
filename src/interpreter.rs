@@ -35,7 +35,7 @@ impl Display for Value {
 }
 pub fn  eval(ast: TypedASTNode) -> Value {
     let mut value_table: SymbolTable<Value> = SymbolTable::new();
-    return eval_expression(ast, &mut value_table)
+    eval_expression(ast, &mut value_table)
     
 }
 pub fn eval_expression(ast: TypedASTNode, symbol_table: &mut SymbolTable<Value>) -> Value {

@@ -158,7 +158,7 @@ fn variable_declaration(lexer: &mut Lexer, errors: &mut Vec<ParseError>) -> ASTN
         let type_tok_loc = type_tok.source_location();
 
         if let TokenType::Identifier(id) = type_tok.token_type {
-            type_name = id.clone();
+            type_name.clone_from(&id);
             let type_decl = ASTNode::TypeVariable(id, type_tok_loc);
             type_declaration = Some(Box::new(type_decl));
         } else {

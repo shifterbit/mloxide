@@ -44,8 +44,8 @@ fn build_module(
                 node_type: _,
                 location: _,
             } => {
-                let global = llvm::core::LLVMGetNamedGlobal(module, cstr(&name).as_ptr());
-                global
+                
+                llvm::core::LLVMGetNamedGlobal(module, cstr(&name).as_ptr())
             }
             TypedASTNode::VariableDeclaration {
                 variable,
@@ -77,18 +77,18 @@ fn build_module(
             TypedASTNode::Int(v, _) => {
                 println!("building int");
                 let ty = llvm::core::LLVMInt32TypeInContext(context);
-                let val = llvm::core::LLVMConstInt(ty, v as u64, 1);
-                val
+                
+                llvm::core::LLVMConstInt(ty, v as u64, 1)
             }
             TypedASTNode::Float(v, _) => {
                 let ty = llvm::core::LLVMFloatType();
-                let val = llvm::core::LLVMConstReal(ty, v);
-                val
+                
+                llvm::core::LLVMConstReal(ty, v)
             }
             TypedASTNode::Bool(v, _) => {
                 let ty = llvm::core::LLVMInt1Type();
-                let val = llvm::core::LLVMConstInt(ty, v as u64, 0);
-                val
+                
+                llvm::core::LLVMConstInt(ty, v as u64, 0)
             }
             TypedASTNode::Unary {
                 node_type: _,
@@ -99,12 +99,12 @@ fn build_module(
                 let ty = generate_llvm_type(&expr.get_type());
                 match *expr {
                     TypedASTNode::Int(v, _) => {
-                        let val = llvm::core::LLVMConstInt(ty, -v as u64, 1);
-                        val
+                        
+                        llvm::core::LLVMConstInt(ty, -v as u64, 1)
                     }
                     TypedASTNode::Float(v, _) => {
-                        let val = llvm::core::LLVMConstReal(ty, -v);
-                        val
+                        
+                        llvm::core::LLVMConstReal(ty, -v)
                     }
                     _ => panic!(),
                 }

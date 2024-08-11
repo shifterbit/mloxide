@@ -32,7 +32,7 @@ impl Display for Type {
                 for item in types {
                     msg.push_str(&(" * ".to_string() + &item.to_string()));
                 }
-                msg = msg.trim().strip_prefix('*').unwrap().to_owned();
+                msg = msg.trim().strip_prefix('*').unwrap().to_string();
                 let display = msg.split_at(1).1;
 
                 write!(f, "({})", display)
