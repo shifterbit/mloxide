@@ -1,7 +1,6 @@
 use std::ffi::CString;
 
 use llvm_sys::{
-    bit_writer::LLVMWriteBitcodeToFile,
     core::{LLVMContextDispose, LLVMDisposeBuilder, LLVMDisposeModule, LLVMSetInitializer},
     prelude::{LLVMTypeRef, LLVMValueRef},
     LLVMBuilder, LLVMContext, LLVMModule,
@@ -19,8 +18,6 @@ pub fn compile(root: TypedASTNode) {
 
         build_module(root, context, builder, module);
         llvm::core::LLVMDumpModule(module);
-        println!("dumped module");
-        LLVMWriteBitcodeToFile(module, cstr("main").as_ptr());
         LLVMDisposeBuilder(builder);
         LLVMDisposeModule(module);
         LLVMContextDispose(context);
@@ -53,13 +50,10 @@ fn build_module(
                 node_type: _,
                 location: _,
             } => {
-                println!("building declaration");
                 let ty = generate_llvm_type(&value.get_type());
                 let val = build_module(*value, context, builder, module);
-                println!("built val and type");
                 let global = llvm::core::LLVMAddGlobal(module, ty, cstr(&variable).as_ptr());
                 LLVMSetInitializer(global, val);
-                println!("added global");
 
                 val
             }
@@ -75,7 +69,6 @@ fn build_module(
                 llvm::core::LLVMConstNull(ty)
             }
             TypedASTNode::Int(v, _) => {
-                println!("building int");
                 let ty = llvm::core::LLVMInt32TypeInContext(context);
                 
                 llvm::core::LLVMConstInt(ty, v as u64, 1)
