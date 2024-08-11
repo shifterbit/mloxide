@@ -1,13 +1,13 @@
-use std::{
-    ffi::{CStr, CString},
-    os::raw::c_char,
-};
+use std::ffi::CString;
 
 use llvm_sys::{
-    bit_writer::LLVMWriteBitcodeToFile, core::{LLVMContextDispose, LLVMDisposeBuilder, LLVMDisposeModule, LLVMSetInitializer}, prelude::{LLVMTypeRef, LLVMValueRef}, LLVMBuilder, LLVMContext, LLVMModule
+    bit_writer::LLVMWriteBitcodeToFile,
+    core::{LLVMContextDispose, LLVMDisposeBuilder, LLVMDisposeModule, LLVMSetInitializer},
+    prelude::{LLVMTypeRef, LLVMValueRef},
+    LLVMBuilder, LLVMContext, LLVMModule,
 };
 
-use crate::{ast::TypedASTNode, symbol_table::SymbolTable, types::Type};
+use crate::{ast::TypedASTNode, types::Type};
 
 extern crate llvm_sys as llvm;
 
@@ -16,12 +16,11 @@ pub fn compile(root: TypedASTNode) {
         let context = llvm::core::LLVMContextCreate();
         let module = llvm::core::LLVMModuleCreateWithName(cstr("main").as_ptr());
         let builder = llvm::core::LLVMCreateBuilderInContext(context);
-        let mut table: SymbolTable<LLVMValueRef> = SymbolTable::new();
 
-        build_module(root, context, builder, module, &mut table);
+        build_module(root, context, builder, module);
         llvm::core::LLVMDumpModule(module);
         println!("dumped module");
-        LLVMWriteBitcodeToFile(module,cstr("main").as_ptr());
+        LLVMWriteBitcodeToFile(module, cstr("main").as_ptr());
         LLVMDisposeBuilder(builder);
         LLVMDisposeModule(module);
         LLVMContextDispose(context);
@@ -29,8 +28,7 @@ pub fn compile(root: TypedASTNode) {
 }
 
 fn cstr(s: &str) -> CString {
-    let f = CString::new(s).expect("CString::new failed");
-    return f;
+    CString::new(s).expect("CString::new failed")
 }
 
 fn build_module(
@@ -38,31 +36,26 @@ fn build_module(
     context: *mut LLVMContext,
     builder: *mut LLVMBuilder,
     module: *mut LLVMModule,
-    table: &mut SymbolTable<LLVMValueRef>,
 ) -> LLVMValueRef {
     unsafe {
         match node {
             TypedASTNode::Identifier {
                 name,
-                node_type,
-                location,
+                node_type: _,
+                location: _,
             } => {
                 let global = llvm::core::LLVMGetNamedGlobal(module, cstr(&name).as_ptr());
-                table.lookup(&name).unwrap();
                 global
-                
-                // let global = llvm::core::LLVMBuildGlobalString(B, Str, Name)
             }
             TypedASTNode::VariableDeclaration {
                 variable,
                 value,
-                node_type,
+                node_type: _,
                 location: _,
             } => {
                 println!("building declaration");
                 let ty = generate_llvm_type(&value.get_type());
-                let val = build_module(*value, context, builder, module, table);
-                table.insert(&variable, val);
+                let val = build_module(*value, context, builder, module);
                 println!("built val and type");
                 let global = llvm::core::LLVMAddGlobal(module, ty, cstr(&variable).as_ptr());
                 LLVMSetInitializer(global, val);
@@ -72,11 +65,11 @@ fn build_module(
             }
             TypedASTNode::Declarations {
                 declarations,
-                node_type,
+                node_type: _,
                 location: _,
             } => {
                 for dec in declarations {
-                    build_module(dec, context, builder, module, table);
+                    build_module(dec, context, builder, module);
                 }
                 let ty = llvm::core::LLVMVoidType();
                 llvm::core::LLVMConstNull(ty)
@@ -98,10 +91,10 @@ fn build_module(
                 val
             }
             TypedASTNode::Unary {
-                node_type,
-                op,
+                node_type: _,
+                op:_,
                 expr,
-                location,
+                location: _,
             } => {
                 let ty = generate_llvm_type(&expr.get_type());
                 match *expr {
@@ -117,43 +110,42 @@ fn build_module(
                 }
             }
             TypedASTNode::Binary {
-                node_type,
+                node_type: _,
                 op,
                 lhs,
                 rhs,
-                location,
+                location: _,
             } => match op {
                 crate::ast::Operator::Add => {
-                    let left = build_module(*lhs, context, builder, module, table);
-                    let right = build_module(*rhs, context, builder, module, table);
+                    let left = build_module(*lhs, context, builder, module);
+                    let right = build_module(*rhs, context, builder, module);
                     llvm::core::LLVMBuildAdd(builder, left, right, cstr("").as_ptr())
                 }
                 crate::ast::Operator::Subtract => {
-                    let left = build_module(*lhs, context, builder, module, table);
-                    let right = build_module(*rhs, context, builder, module, table);
+                    let left = build_module(*lhs, context, builder, module);
+                    let right = build_module(*rhs, context, builder, module);
                     llvm::core::LLVMBuildSub(builder, left, right, cstr("").as_ptr())
                 }
                 crate::ast::Operator::Divide => {
-                    let left = build_module(*lhs, context, builder, module, table);
-                    let right = build_module(*rhs, context, builder, module, table);
+                    let left = build_module(*lhs, context, builder, module);
+                    let right = build_module(*rhs, context, builder, module);
                     llvm::core::LLVMBuildSDiv(builder, left, right, cstr("").as_ptr())
                 }
                 crate::ast::Operator::Multiply => {
-                    let left = build_module(*lhs, context, builder, module, table);
-                    let right = build_module(*rhs, context, builder, module, table);
+                    let left = build_module(*lhs, context, builder, module);
+                    let right = build_module(*rhs, context, builder, module);
                     llvm::core::LLVMBuildMul(builder, left, right, cstr("").as_ptr())
                 }
                 _ => todo!(),
             },
             TypedASTNode::Tuple {
                 exprs,
-                node_type,
-                location,
+                node_type:_ ,
+                location: _,
             } => {
-                let ty = generate_llvm_type(&node_type);
                 let mut val: Vec<_> = exprs
                     .iter()
-                    .map(|node| build_module(node.clone(), context, builder, module, table))
+                    .map(|node| build_module(node.clone(), context, builder, module))
                     .collect::<_>();
                 llvm::core::LLVMConstStruct(
                     val.as_mut_ptr() as *mut LLVMValueRef,

@@ -2,10 +2,9 @@ use std::{fs, process::exit};
 
 use ast::ASTNode;
 use error_reporting::errors_from_file;
-use interpreter::Value;
 use lexer::Lexer;
 use parser::parse;
-use symbol_table::{resolve_symbols, SymbolTable};
+use symbol_table::resolve_symbols;
 use type_checker::check;
 
 pub mod ast;
