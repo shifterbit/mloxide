@@ -2,7 +2,7 @@ use std::{fs, process::exit};
 
 use ast::ASTNode;
 use error_reporting::errors_from_file;
-use interpreter::Value;
+use interpreter::{eval, Value};
 use lexer::Lexer;
 use parser::parse;
 use symbol_table::{resolve_symbols, SymbolTable};
@@ -35,7 +35,7 @@ pub fn run_file(filepath: &str) {
         errors_from_file(filepath, &source, errors);
         exit(1);
     });
-    let result = interpreter::eval(typed_ast);
+    let result = eval(typed_ast);
     println!("{}", result);
 }
 
